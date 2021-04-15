@@ -10,7 +10,7 @@ class LoginFormModel {
 
   toJson() {
     return {
-      'user_name': _userName,
+      'username': _userName,
       'password': _password
     };
   }

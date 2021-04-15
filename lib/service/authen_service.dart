@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:pos_ios_bvhn/constants.dart';
 import 'package:pos_ios_bvhn/service/interceptor/custom_dio.dart';
@@ -8,13 +10,12 @@ class AuthRepository {
 
   Future<Map> login(Map<String, dynamic> data) async {
     try {
-      print(data);
       Response response = await client.dio.request(
           API_URL + '/login',
         data: data,
         options: Options(method: 'POST')
       );
-      print("response :" + response.data);
+      print("response :" + response.toString());
       return response.data;
     } on DioError catch (e) {
       print("error: ");

@@ -148,11 +148,11 @@ class _LoginScreenState extends State<LoginScreen> {
               // TODO: Auth
               print( "Email : " + emailController.text);
               print( "Password : " + passwordController.text);
-              // LoginFormModel loginFormModel = new LoginFormModel(emailController.text, passwordController.text);
-              // final res = await authService.login(loginFormModel.toJson());
+               LoginFormModel loginFormModel = new LoginFormModel(emailController.text, passwordController.text);
+               final res = await authService.login(loginFormModel.toJson());
               // print("res :" + res.toString());
               Navigator.push(context,
-                MaterialPageRoute(builder: (context) => BranchSelectionScreen())  
+                MaterialPageRoute(builder: (context) => BranchSelectionScreen())
               );
             }
           },
