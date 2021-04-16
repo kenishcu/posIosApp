@@ -1,18 +1,21 @@
 import 'package:dio/dio.dart';
 import 'package:pos_ios_bvhn/model/results_model.dart';
+import 'package:pos_ios_bvhn/service/interceptor/custom_dio.dart';
 
 import '../constants.dart';
-import 'interceptor/custom_dio.dart';
 
-class TableService {
+class RestaurantService {
 
   CustomDio client = new CustomDio();
 
-  Future<ResultModel> getTablePositions(String branchId) async {
+  Future<ResultModel> getProductsByParams(String branchId, String parentId,
+      String categoryId, String query, int p, int n) async {
     try {
       Response response = await client.dio.request(
-          API_URL + '/table-positions?status=-1&branch_id=${branchId.toString()}',
-          data: {'n': '','p':'', 'query': ''},
+          API_URL + '/product-in-menu?branch_id=${branchId.toString()}'
+              '&category_id=${categoryId.toString()}'
+              '&parent_id=${parentId.toString()}&query=${query.toString()}',
+          data: {'n': 1,'p': 50},
           options: Options(method: 'GET')
       );
       return ResultModel.fromJson(response.data);
@@ -22,11 +25,12 @@ class TableService {
     }
   }
 
-  Future<ResultModel> getTableDataByPosition(String branchId, String positionId) async {
+
+  Future<ResultModel> getCategoryRestaurantById(String parentId) async {
     try {
       Response response = await client.dio.request(
-          API_URL + '/tables?status=-1&branch_id=${branchId.toString()}&position_id=${positionId.toString()}',
-          data: {'n': '','p':'', 'query': ''},
+          API_URL + '/categories?parent_id=${parentId.toString()}',
+          data: {'n': 1,'p': 50},
           options: Options(method: 'GET')
       );
       return ResultModel.fromJson(response.data);
@@ -35,4 +39,5 @@ class TableService {
       throw (e.message);
     }
   }
+
 }

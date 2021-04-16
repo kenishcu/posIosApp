@@ -1,5 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:pos_ios_bvhn/model/restaurant/branch_restaurant_model.dart';
+import 'package:pos_ios_bvhn/model/results_model.dart';
+import 'package:pos_ios_bvhn/model/user/branch_model.dart';
+import 'package:pos_ios_bvhn/model/user/user_model.dart';
+import 'package:pos_ios_bvhn/provider/setting_provider.dart';
+import 'package:pos_ios_bvhn/service/branch_service.dart';
+import 'package:pos_ios_bvhn/ui/home/table_screen.dart';
+import 'package:provider/provider.dart';
 
 class BranchSelectionScreen extends StatefulWidget{
   @override
@@ -9,6 +17,30 @@ class BranchSelectionScreen extends StatefulWidget{
 class _BranchSelectionScreenState extends State<BranchSelectionScreen> {
 
   ScrollController _scrollController;
+
+  BranchService branchService = new BranchService();
+
+  List<BranchRestaurantModel> branches = [];
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    initData();
+  }
+
+  Future initData() async {
+    ResultModel res = await branchService.getAllBranches();
+    if(res.status) {
+      if(res.data != null && res.data.length > 0) {
+        for(int i = 0; i < res.data.length; i++) {
+          setState(() {
+            branches.add(BranchRestaurantModel.fromJson(res.data[i]));
+          });
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +122,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen> {
                       child: Row(
                         children: [
                           Container(
-                            child: Text("Accepted", style: TextStyle(
+                            child: Text("CÁC CHI NHÁNH ", style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black
@@ -104,7 +136,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen> {
                             ),
                             margin: EdgeInsets.only(left: 20),
                             child: Center(
-                              child: Text("10", style: TextStyle(
+                              child: Text( branches.length > 0 ? branches.length.toString() : "0", style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               )),
@@ -124,37 +156,54 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen> {
                           padding: const EdgeInsets.only(left:20.0, top: 4, right: 20, bottom: 4),
                           mainAxisSpacing: 4.0,
                           crossAxisSpacing: 4.0,
-                          children: List.generate(10, (index) {
+                          children: List.generate( branches.length, (index) {
                             return Card(
                               child: Container(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: [
-                                    Container(
-                                      child: Padding(
-                                        padding: EdgeInsets.only(left: 10, top: 10),
-                                        child: Text("# Chi nhánh " + index.toString(), style: TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold
-                                        )),
+                                child: TextButton(
+                                  onPressed: () {
+                                    //TODO: set config branch
+                                    BranchModel newBranch = BranchModel(branches[index].branchId, branches[index].branchName,  branches[index].branchCode,  branches[index].status);
+                                    UserModel userInfo = Provider.of<SettingProvider>(context, listen: false).userInfo;
+                                    userInfo.branch = newBranch;
+                                    userInfo.branchCode = newBranch.branchCode;
+                                    userInfo.branchName = newBranch.branchName;
+                                    userInfo.branchId = newBranch.branchId;
+                                    Provider.of<SettingProvider>(context, listen: false).setUserInfo(userInfo);
+
+                                    //TODO: go to table screen
+                                    Navigator.push(context,
+                                        MaterialPageRoute(builder: (context) => TableScreen())
+                                    );
+                                  },
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        child: Padding(
+                                          padding: EdgeInsets.only(left: 10, top: 10),
+                                          child: Text("# Chi nhánh " + branches[index].branchName, style: TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold
+                                          )),
+                                        ),
                                       ),
-                                    ),
-                                    Container(
-                                      height: 50,
-                                      width: 120,
-                                      margin: EdgeInsets.only(left: 200, top: 10),
-                                      decoration: BoxDecoration(
-                                        color: Color(0xFF589a1d),
-                                        borderRadius: BorderRadius.circular(5.0)
-                                      ),
-                                      child: Center(
-                                        child: Text("Sẵn sàng", style: TextStyle(
-                                            color: Colors.white
-                                        )),
-                                      ),
-                                    )
-                                  ],
+                                      Container(
+                                        height: 50,
+                                        width: 120,
+                                        margin: EdgeInsets.only(left: 200, top: 10),
+                                        decoration: BoxDecoration(
+                                            color: branches[index].status == 1 ? Color(0xFF589a1d) : Colors.redAccent,
+                                            borderRadius: BorderRadius.circular(5.0)
+                                        ),
+                                        child: Center(
+                                          child: Text(branches[index].status == 1 ? "Sẵn sàng" : "Tạm dừng", style: TextStyle(
+                                              color: Colors.white
+                                          )),
+                                        ),
+                                      )
+                                    ],
+                                  ),
                                 ),
                               ),
                             );

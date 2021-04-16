@@ -1,8 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:pos_ios_bvhn/model/results_model.dart';
 import 'package:pos_ios_bvhn/model/user/login_form_model.dart';
+import 'package:pos_ios_bvhn/model/user/user_model.dart';
+import 'package:pos_ios_bvhn/provider/setting_provider.dart';
 import 'package:pos_ios_bvhn/service/authen_service.dart';
 import 'package:pos_ios_bvhn/ui/login/branch_selection_screen.dart';
+import 'package:provider/provider.dart';
 
 import '../../constants.dart';
 
@@ -149,11 +153,16 @@ class _LoginScreenState extends State<LoginScreen> {
               print( "Email : " + emailController.text);
               print( "Password : " + passwordController.text);
                LoginFormModel loginFormModel = new LoginFormModel(emailController.text, passwordController.text);
-               final res = await authService.login(loginFormModel.toJson());
-              // print("res :" + res.toString());
-              Navigator.push(context,
-                MaterialPageRoute(builder: (context) => BranchSelectionScreen())
-              );
+               ResultModel res = await authService.login(loginFormModel.toJson());
+               if(res.status) {
+                 UserModel userInfo =  UserModel.fromJson(res.data);
+                 Provider.of<SettingProvider>(context, listen: false).setUserInfo(userInfo);
+                 Navigator.push(context,
+                     MaterialPageRoute(builder: (context) => BranchSelectionScreen())
+                 );
+               } else {
+                 // TODO: AUTH FAILED
+               }
             }
           },
           child: Text("Login",

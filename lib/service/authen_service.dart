@@ -2,21 +2,21 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:pos_ios_bvhn/constants.dart';
+import 'package:pos_ios_bvhn/model/results_model.dart';
 import 'package:pos_ios_bvhn/service/interceptor/custom_dio.dart';
 
 class AuthRepository {
 
   CustomDio client = new CustomDio();
 
-  Future<Map> login(Map<String, dynamic> data) async {
+  Future<ResultModel> login(Map<String, dynamic> data) async {
     try {
       Response response = await client.dio.request(
           API_URL + '/login',
         data: data,
         options: Options(method: 'POST')
       );
-      print("response :" + response.toString());
-      return response.data;
+      return ResultModel.fromJson(response.data);
     } on DioError catch (e) {
       print("error: ");
       throw (e.message);
