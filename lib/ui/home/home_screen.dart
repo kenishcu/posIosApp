@@ -1,7 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pos_ios_bvhn/model/restaurant/category_restaurant_model.dart';
+import 'package:pos_ios_bvhn/model/restaurant/product_restaurant_model.dart';
+import 'package:pos_ios_bvhn/model/results_model.dart';
 import 'package:pos_ios_bvhn/model/table/table_model.dart';
+import 'package:pos_ios_bvhn/service/restaurant_service.dart';
 
 import '../../constants.dart';
 
@@ -28,6 +31,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   ScrollController _scrollController;
 
+  List<List<ProductRestaurantModel>> listTabsView = [];
+
+  RestaurantService restaurantService = new RestaurantService();
+
   // list categories restaurant
   List<CategoryRestaurantModel> categories = [
     CategoryRestaurantModel("1050100000000000000", "nha_bep", "Nhà bếp"),
@@ -37,44 +44,142 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // list header tab bar view
   List<Widget> listWidget = [
-    new Container(
-      height: 40,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Align(
-        alignment: Alignment.center,
-        child: Text("Nhà bếp", style: TextStyle(
-            color: PrimaryGreyColor
-        )),
-      ),
-    ),
-    new Container(
-      height: 40,
-      decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10)
-      ),
-      child: Align(
-        alignment: Alignment.center,
-        child: Text("Quầy bar", style: TextStyle(
-            color: PrimaryGreyColor
-        )),
-      ),
-    ),
-    new Container(
-      height: 40,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Align(
-        alignment: Alignment.center,
-        child: Text("Quầy bánh", style: TextStyle(
-          color: PrimaryGreyColor,
-        )),
-      ),
-    )
   ];
 
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    initDataRestaurant();
+  }
+
+  Future initDataRestaurant() async {
+
+    categories.forEach((element) async {
+
+      TextEditingController _nodeController = new TextEditingController();
+
+      ResultModel resProduct = await restaurantService.getProductsByParams('', element.categoryId, '', "", 1, 50);
+      if(resProduct.status && resProduct.data != null && resProduct.data.length > 0) {
+        List<ProductRestaurantModel> products = [];
+
+        for(int i = 0; i < resProduct.data.length; i++) {
+          setState(() {
+            products.add(ProductRestaurantModel.fromJson(resProduct.data[i]));
+          });
+        }
+
+        if(element.categoryCode == "nha_bep") {
+          if(products.length > 0) {
+            if(listTabsView.length >= 1) {
+              listTabsView.insert(1, products);
+            } else {
+              listTabsView.add(products);
+            }
+          } else {
+            if(listTabsView.length >= 1) {
+              listTabsView.insert(1, []);
+            } else {
+              listTabsView.add([]);
+            }
+          }
+          setState(() {
+            listWidget[1] = new Container(
+              height: 40,
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10)
+              ),
+              child: Align(
+                alignment: Alignment.center,
+                child: Text( element.categoryName, style: TextStyle(
+                    color: PrimaryGreyColor
+                )),
+              ),
+            );
+          });
+        } else if(element.categoryCode == "quay_bar") {
+          if(products.length > 0) {
+            List<ProductRestaurantModel> pro = products;
+            if(listTabsView.length >= 2) {
+              listTabsView.insert(2, pro);
+            } else {
+              listTabsView.add(pro);
+            }
+          } else {
+            if(listTabsView.length >= 2) {
+              listTabsView.insert(2, []);
+            } else {
+              listTabsView.add([]);
+            }
+          }
+          setState(() {
+            listWidget[2] = new Container(
+              height: 40,
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10)
+              ),
+              child:  Align(
+                alignment: Alignment.center,
+                child: Text( element.categoryName, style: TextStyle(
+                    color: PrimaryGreyColor
+                )),
+              ),
+            );
+          });
+        } else if(element.categoryCode == "quay_banh") {
+          if(products.length > 0) {
+            List<ProductRestaurantModel> pro = products;
+            if(listTabsView.length >= 3) {
+              listTabsView.insert(3, pro);
+            } else {
+              listTabsView.add(pro);
+            }
+          } else {
+            if(listTabsView.length >= 3) {
+              listTabsView.insert(3, []);
+            } else {
+              listTabsView.add([]);
+            }
+          }
+          setState(() {
+            listWidget[3] = new Container(
+              height: 40,
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10)
+              ),
+              child:  Align(
+                alignment: Alignment.center,
+                child: Text( element.categoryName, style: TextStyle(
+                    color: PrimaryGreyColor
+                )),
+              ),
+            );
+          });
+        } else {
+          if(products.length > 0) {
+            List<ProductRestaurantModel> pro = products;
+            listTabsView.add(pro);
+          } else {
+            listTabsView.add([]);
+          }
+          setState(() {
+            listWidget.add(new Container(
+              height: 40,
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10)
+              ),
+              child:  Align(
+                alignment: Alignment.center,
+                child: Text( element.categoryName, style: TextStyle(
+                    color: PrimaryGreyColor
+                )),
+              ),
+            ));
+          });
+        }
+      }
+    });
+  }
 
   // TODO: build widget for view in every tab bar
   Widget _buildAnyWidgets(BuildContext context, i) {

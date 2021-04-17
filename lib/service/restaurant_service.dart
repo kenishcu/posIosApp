@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
+import 'package:flutter/services.dart';
 import 'package:pos_ios_bvhn/model/results_model.dart';
 import 'package:pos_ios_bvhn/service/interceptor/custom_dio.dart';
 
@@ -40,4 +43,13 @@ class RestaurantService {
     }
   }
 
+  Future<ResultModel>  getCategoryParentRestaurant() async {
+    try {
+      String data = await rootBundle.loadString('lib/data/category_restaurant.json');
+      return ResultModel.fromJson(json.decode(data));
+    } on DioError catch (e) {
+      print("error: ");
+      throw (e.message);
+    }
+  }
 }
