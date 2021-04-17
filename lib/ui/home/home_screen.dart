@@ -75,6 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
     )
   ];
 
+
   // TODO: build widget for view in every tab bar
   Widget _buildAnyWidgets(BuildContext context, i) {
 
@@ -336,6 +337,69 @@ class _HomeScreenState extends State<HomeScreen> {
                         spreadRadius: 3,
                         blurRadius: 6,
                       ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white
+                        ),
+                        height: 50,
+                        width: size.width * 0.4,
+                        margin: EdgeInsets.only(left: 10, right: 10, top: 10),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Container(
+                              child: Icon(
+                                Icons.table_view_outlined
+                              ),
+                            ),
+                            Container(
+                              child: Text(" Bàn 1", style: TextStyle(
+                                fontWeight: FontWeight.bold
+                              )),
+                            )
+                          ],
+                        ),
+                      ),
+                      Container(
+                        height: size.height - 240,
+
+                      ),
+                      Container(
+                        height: 50,
+                        margin: EdgeInsets.only(left: 10, right: 10, top: 10),
+                        width: size.width * 0.4,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(5.0),
+                          color: Colors.redAccent
+                        ),
+                        child: TextButton(
+                          onPressed: () {  },
+                          child: Text("HỦY ĐẶT", style: TextStyle(
+                            color: Colors.white
+                          )),
+                        ),
+                      ),
+                      Container(
+                        height: 50,
+                        margin: EdgeInsets.only(left: 10, right: 10, top: 10),
+                        width: size.width * 0.4,
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(5.0),
+                            color: PrimaryGreenColor
+                        ),
+                        child: TextButton(
+                          onPressed: () {  },
+                          child: Text("ĐẶT MÓN", style: TextStyle(
+                              color: Colors.white
+                          )),
+                        ),
+                      )
                     ],
                   ),
                 ),

@@ -1,9 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pos_ios_bvhn/provider/setting_provider.dart';
+import 'package:pos_ios_bvhn/ui/home/home_screen.dart';
 import 'package:pos_ios_bvhn/ui/home/table_screen.dart';
 import 'package:pos_ios_bvhn/ui/login/branch_selection_screen.dart';
 import 'package:pos_ios_bvhn/ui/login/login_screen.dart';
+import 'package:pos_ios_bvhn/ui/order/order_screen.dart';
 import 'package:provider/provider.dart';
 
 class App extends StatefulWidget {
@@ -24,7 +26,7 @@ class _AppState extends State<App> {
           ),
           debugShowCheckedModeBanner: false,
           routes: {
-            '/': (context) => LoginScreen()
+            '/': (context) => HomeScreen(table: null)
           },
         ),
       ),
