@@ -198,14 +198,12 @@ class _TableScreenState extends State<TableScreen> {
                     iconSize: 30,
                     underline: SizedBox(),
                     onChanged: (PositionTableModel newValue) async {
-                      print(newValue.branchId);
-                      print(newValue.id);
                       ResultModel resTableData = await tableService.getTableDataByPosition(newValue.branchId, newValue.id);
                       setState(() {
                         dropdownValue = newValue;
                         tables = [];
                         if (resTableData.status && resTableData.data != null && resTableData.data.length > 0) {
-                          for (int i = 0; i < resTableData.data.length; i++) {
+                          for (int i = 0; i < resTableData.data.length ; i++) {
                             tables.add(TableModel.fromJson(resTableData.data[i]));
                           }
                         }

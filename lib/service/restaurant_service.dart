@@ -29,10 +29,10 @@ class RestaurantService {
   }
 
 
-  Future<ResultModel> getCategoryRestaurantById(String parentId) async {
+  Future<ResultModel> getCategoryRestaurantById(String branchId, String parentId) async {
     try {
       Response response = await client.dio.request(
-          API_URL + '/categories?parent_id=${parentId.toString()}',
+          API_URL + '/categories?parent_id=${parentId.toString()}&branch_id=${branchId.toString()}',
           data: {'n': 1,'p': 50},
           options: Options(method: 'GET')
       );
