@@ -4,7 +4,9 @@ import 'package:pos_ios_bvhn/model/restaurant/category_restaurant_model.dart';
 import 'package:pos_ios_bvhn/model/restaurant/product_restaurant_model.dart';
 import 'package:pos_ios_bvhn/model/results_model.dart';
 import 'package:pos_ios_bvhn/model/table/table_model.dart';
+import 'package:pos_ios_bvhn/provider/setting_provider.dart';
 import 'package:pos_ios_bvhn/service/restaurant_service.dart';
+import 'package:provider/provider.dart';
 
 import '../../constants.dart';
 
@@ -12,13 +14,15 @@ class HomeScreen extends StatefulWidget {
 
   final TableModel table;
 
+  List<bool> _canLoadMores = [];
+
   HomeScreen({Key key,@required this.table}) : super(key: key);
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin{
 
   bool _loading = false;
 
@@ -30,6 +34,8 @@ class _HomeScreenState extends State<HomeScreen> {
   TabController _tabController;
 
   ScrollController _scrollController;
+
+  List<bool> _canLoadMores = [];
 
   List<List<ProductRestaurantModel>> listTabsView = [];
 
@@ -48,6 +54,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void initState() {
+    setState(() {
+      _loading = true;
+    });
     // TODO: implement initState
     super.initState();
     initDataRestaurant();
@@ -55,129 +64,52 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future initDataRestaurant() async {
 
+    String branchId = Provider.of<SettingProvider>(context, listen: false).userInfo.branchId;
+
+    _tabController = TabController(length: categories.length, vsync: this);
+
     categories.forEach((element) async {
+
+      _canLoadMores.add(false);
+
+      setState(() {
+        listWidget.add(new Container(
+          height: 40,
+          decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10)
+          ),
+          child:  Align(
+            alignment: Alignment.center,
+            child: Text( element.categoryName, style: TextStyle(
+                color: PrimaryGreyColor
+            )),
+          ),
+        ));
+      });
 
       TextEditingController _nodeController = new TextEditingController();
 
-      ResultModel resProduct = await restaurantService.getProductsByParams('', element.categoryId, '', "", 1, 50);
+      ResultModel resProduct = await restaurantService.getProductsByParams(branchId , element.categoryId, '', "", 1, 50);
+
       if(resProduct.status && resProduct.data != null && resProduct.data.length > 0) {
         List<ProductRestaurantModel> products = [];
+
 
         for(int i = 0; i < resProduct.data.length; i++) {
           setState(() {
             products.add(ProductRestaurantModel.fromJson(resProduct.data[i]));
           });
         }
-
-        if(element.categoryCode == "nha_bep") {
-          if(products.length > 0) {
-            if(listTabsView.length >= 1) {
-              listTabsView.insert(1, products);
-            } else {
-              listTabsView.add(products);
-            }
-          } else {
-            if(listTabsView.length >= 1) {
-              listTabsView.insert(1, []);
-            } else {
-              listTabsView.add([]);
-            }
-          }
-          setState(() {
-            listWidget[1] = new Container(
-              height: 40,
-              decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10)
-              ),
-              child: Align(
-                alignment: Alignment.center,
-                child: Text( element.categoryName, style: TextStyle(
-                    color: PrimaryGreyColor
-                )),
-              ),
-            );
-          });
-        } else if(element.categoryCode == "quay_bar") {
-          if(products.length > 0) {
-            List<ProductRestaurantModel> pro = products;
-            if(listTabsView.length >= 2) {
-              listTabsView.insert(2, pro);
-            } else {
-              listTabsView.add(pro);
-            }
-          } else {
-            if(listTabsView.length >= 2) {
-              listTabsView.insert(2, []);
-            } else {
-              listTabsView.add([]);
-            }
-          }
-          setState(() {
-            listWidget[2] = new Container(
-              height: 40,
-              decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10)
-              ),
-              child:  Align(
-                alignment: Alignment.center,
-                child: Text( element.categoryName, style: TextStyle(
-                    color: PrimaryGreyColor
-                )),
-              ),
-            );
-          });
-        } else if(element.categoryCode == "quay_banh") {
-          if(products.length > 0) {
-            List<ProductRestaurantModel> pro = products;
-            if(listTabsView.length >= 3) {
-              listTabsView.insert(3, pro);
-            } else {
-              listTabsView.add(pro);
-            }
-          } else {
-            if(listTabsView.length >= 3) {
-              listTabsView.insert(3, []);
-            } else {
-              listTabsView.add([]);
-            }
-          }
-          setState(() {
-            listWidget[3] = new Container(
-              height: 40,
-              decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10)
-              ),
-              child:  Align(
-                alignment: Alignment.center,
-                child: Text( element.categoryName, style: TextStyle(
-                    color: PrimaryGreyColor
-                )),
-              ),
-            );
-          });
+        List<ProductRestaurantModel> pro = products;
+        listTabsView.add(pro);
         } else {
-          if(products.length > 0) {
-            List<ProductRestaurantModel> pro = products;
-            listTabsView.add(pro);
-          } else {
-            listTabsView.add([]);
-          }
-          setState(() {
-            listWidget.add(new Container(
-              height: 40,
-              decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10)
-              ),
-              child:  Align(
-                alignment: Alignment.center,
-                child: Text( element.categoryName, style: TextStyle(
-                    color: PrimaryGreyColor
-                )),
-              ),
-            ));
-          });
-        }
-      }
+        listTabsView.add([]);
+       }
+    });
+
+    setState(() {
+      _loading = false;
+      print(listTabsView.length);
     });
   }
 
@@ -266,6 +198,122 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
+          AnimatedContainer(
+              duration: Duration(seconds: 1),
+              curve: Curves.fastOutSlowIn,
+              height: selected ? 345 : 425,
+              margin: EdgeInsets.only(top: 10),
+              width: size.width * 0.7,
+              decoration: BoxDecoration(
+                color: Color(0xfff7f7f7),
+//              border: Border.all()
+              ),
+              child: NotificationListener(
+                onNotification: (ScrollNotification scrollInfo) {
+//                  if (!isLoading && scrollInfo.metrics.pixels ==
+//                      scrollInfo.metrics.maxScrollExtent) {
+////                   start loading data
+//                    _loadData(i);
+//                  }
+                  return true;
+                },
+                child: CustomScrollView(
+                  slivers: <Widget>[
+                    SliverPadding(
+                        padding: EdgeInsets.all(1.0),
+                        sliver: SliverGrid(
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            ///no.of items in the horizontal axis
+                            crossAxisCount: 4,
+                            childAspectRatio: 0.96,
+                            mainAxisSpacing: 4.0,
+                            crossAxisSpacing: 4.0,
+                          ),
+                          ///Lazy building of list
+                          delegate: SliverChildBuilderDelegate(
+                                  (BuildContext context, int index) {
+                                /// To convert this infinite list to a list with "n" no of items,
+                                /// uncomment the following line:
+                                /// if (index > n) return null;
+                                return Card(
+                                  child: new Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.grey.withOpacity(0.2),
+                                            spreadRadius: 3,
+                                            blurRadius: 6,
+                                          ),
+                                        ],
+                                      ),
+                                      child: TextButton(
+                                        onPressed: () {
+                                          setState(() {
+                                          });
+                                        },
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisAlignment: MainAxisAlignment.start,
+                                          children: [
+                                            Container(
+                                              height: 100,
+                                              decoration: new BoxDecoration(
+                                                image: new DecorationImage(
+                                                  image:  NetworkImage( "https://nhapi.hongngochospital.vn" + listTabsView[i][index].imageUrl),
+                                                  fit: BoxFit.fill,
+                                                ),
+                                              ),
+                                            ),
+                                            Container(
+                                              height: 23,
+                                              margin: EdgeInsets.only(top: 5, left: 10),
+                                              child: Text(listTabsView[i][index].productName,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                      fontSize: 14,
+                                                      color: Colors.black
+                                                  )),
+                                            ),
+                                            Container(
+                                              height: 20,
+                                              margin: EdgeInsets.only(left: 10),
+                                              child: Padding(
+                                                padding: EdgeInsets.only(bottom: 0, right: 5),
+                                                child:  Align(
+                                                  alignment: Alignment.bottomRight,
+                                                  child: Text(listTabsView[i][index].price.toString(), style: TextStyle(
+                                                      fontSize: 13,
+                                                      fontWeight: FontWeight.bold
+                                                  )),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                  ),
+                                );
+                              },
+                              childCount: listTabsView[i].length
+                            /// Set childCount to limit no.of items
+                            /// childCount: 100,
+                          ),
+                        )
+                    ),
+                    SliverToBoxAdapter(
+                      child: _canLoadMores[i]
+                          ? Container(
+                        padding: EdgeInsets.only(bottom: 16),
+                        alignment: Alignment.center,
+                        child: CircularProgressIndicator(),
+                      )
+                          : SizedBox(),
+                    ),
+                  ],
+                ),
+              )
+          ),
         ],
       ),
     );
@@ -285,7 +333,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Size size = MediaQuery.of(context).size;
 
     // TODO: implement build
-    return Scaffold(
+    return _loading ? loading() : Scaffold(
       appBar: AppBar(
         iconTheme: IconThemeData(color: Color(0xFF848a93),),
         backgroundColor: Color(0xFFf4f5f7),

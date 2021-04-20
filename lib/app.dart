@@ -26,7 +26,7 @@ class _AppState extends State<App> {
           ),
           debugShowCheckedModeBanner: false,
           routes: {
-            '/': (context) => HomeScreen(table: null)
+            '/': (context) => LoginScreen()
           },
         ),
       ),

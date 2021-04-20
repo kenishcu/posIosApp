@@ -17,7 +17,7 @@ class RestaurantService {
       Response response = await client.dio.request(
           API_URL + '/product-in-menu?branch_id=${branchId.toString()}'
               '&category_id=${categoryId.toString()}'
-              '&parent_id=${parentId.toString()}&query=${query.toString()}',
+              '&category_parent_id=${parentId.toString()}&query=${query.toString()}',
           data: {'n': 1,'p': 50},
           options: Options(method: 'GET')
       );
