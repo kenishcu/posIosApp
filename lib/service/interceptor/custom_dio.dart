@@ -15,6 +15,9 @@ class CustomDio {
         connectTimeout: CONNECT_TIME_OUT,
         receiveTimeout: RECEIVE_TIME_OUT,
         baseUrl: API_URL,
+        headers: {
+          "content-Type": "application/json"
+        }
     );
 
    dio.options = options;
@@ -22,15 +25,19 @@ class CustomDio {
       InterceptorsWrapper(
         onRequest: (RequestOptions options, RequestInterceptorHandler handler) async {
           print('REQUEST[${options.method}] => PATH: ${options.path}');
-          // SharedPreferences prefs = await SharedPreferences.getInstance();
-          // String token = prefs.getString('token');
-          // if(token != null && options != null) {
-          //   options.headers["Authorization"] = "Bearer " + token;
-          // }
+           SharedPreferences prefs = await SharedPreferences.getInstance();
+           String token = prefs.getString('token');
+           if(token != null && options != null) {
+             options.headers["Authorization"] = "Bearer " + token;
+           }
           return handler.next(options);
         },
         onResponse: (Response response, ResponseInterceptorHandler handler) async {
           print('RESPONSE[${response.statusCode}] => PATH: ${response.requestOptions?.path}');
+          if (response.statusCode == 200 && response.data != null && response.data['token'] != null) {
+            SharedPreferences prefs = await SharedPreferences.getInstance();
+            prefs.setString('token', response.data['token']);
+          }
           return handler.next(response);
         },
         onError: (DioError err, ErrorInterceptorHandler handler) async {

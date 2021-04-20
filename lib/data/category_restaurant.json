@@ -1,0 +1,22 @@
+{
+  "app_version": "20200826",
+  "errors": null,
+  "results": [
+    {
+      "category_id": "1050100000000000000",
+      "category_code": "nha_bep",
+      "category_name": "Nhà bếp"
+    },
+    {
+      "category_id": "1050600000000000000",
+      "category_code": "quay_bar",
+      "category_name": "Quầy bar"
+    },
+    {
+      "category_id": "1050800000000000000",
+      "category_code": "quay_banh",
+      "category_name": "Quầy bánh"
+    }
+  ],
+  "status": true
+}

@@ -1,13 +1,14 @@
-class BranchRestaurantModel {
+class BranchModel {
+
   String _branchId;
   String _branchName;
   String _branchCode;
   int _status;
 
-  BranchRestaurantModel(this._branchId, this._branchName, this._branchCode, this._status);
+  BranchModel (this._branchId, this._branchName, this._branchCode, this._status);
 
-  factory BranchRestaurantModel.fromJson(dynamic json) {
-    return BranchRestaurantModel( json['_id'] as String, json['branch_name'] as String,
+  factory BranchModel.fromJson(dynamic json) {
+    return BranchModel(json['branch_id'] as String, json['branch_name'] as String,
         json['branch_code'] as String, json['status'] as int);
   }
 
