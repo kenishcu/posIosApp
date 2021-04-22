@@ -19,7 +19,8 @@ class AuthRepository {
       return ResultModel.fromJson(response.data);
     } on DioError catch (e) {
       print("error: ");
-      throw (e.message);
+      print (e.message);
+      return ResultModel("", null, null, false);
     }
   }
 

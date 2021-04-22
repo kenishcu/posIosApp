@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:pos_ios_bvhn/model/results_model.dart';
 import 'package:pos_ios_bvhn/model/table/position_table_model.dart';
 import 'package:pos_ios_bvhn/model/table/table_model.dart';
+import 'package:pos_ios_bvhn/model/user/user_model.dart';
 import 'package:pos_ios_bvhn/provider/setting_provider.dart';
 import 'package:pos_ios_bvhn/service/table_service.dart';
 import 'package:pos_ios_bvhn/ui/home/home_screen.dart';
@@ -66,6 +67,8 @@ class _TableScreenState extends State<TableScreen> {
 
     Size size = MediaQuery.of(context).size;
 
+    UserModel userInfo  =  Provider.of<SettingProvider>(context, listen: false).userInfo;
+
     return Scaffold(
       appBar: AppBar(
         iconTheme: IconThemeData(color: Color(0xFF848a93),),
@@ -108,13 +111,13 @@ class _TableScreenState extends State<TableScreen> {
                     children: [
                       Container(
                         height: 40,
-                        child: Text("Tài khoản : hoaint", style: TextStyle(
+                        child: Text("Tài khoản : ${userInfo.userName}", style: TextStyle(
                             color: Colors.white
                         )),
                       ),
                       Container(
                         height: 40,
-                        child: Text("Quyền admin, Chi nhánh Yên Ninh", style: TextStyle(
+                        child: Text("Quyền ${userInfo.roleName}, Chi nhánh ${userInfo.branchName}", style: TextStyle(
                             color: Color(0xFF848b92)
                         )),
                       ),
