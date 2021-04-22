@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:pos_ios_bvhn/model/restaurant/category_meal_restaurant_model.dart';
 import 'package:pos_ios_bvhn/model/restaurant/category_restaurant_model.dart';
 import 'package:pos_ios_bvhn/model/restaurant/product_restaurant_model.dart';
 import 'package:pos_ios_bvhn/model/results_model.dart';
@@ -7,6 +8,7 @@ import 'package:pos_ios_bvhn/model/table/table_model.dart';
 import 'package:pos_ios_bvhn/provider/setting_provider.dart';
 import 'package:pos_ios_bvhn/service/restaurant_service.dart';
 import 'package:provider/provider.dart';
+import 'package:money2/money2.dart';
 
 import '../../constants.dart';
 
@@ -39,7 +41,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   List<List<ProductRestaurantModel>> listTabsView = [];
 
+  List<List<CategoryMealRestaurantModel>> listTabsCategories = [];
+
+  List<TextEditingController> listTextController = [];
+
+  final GlobalKey<AnimatedListState> listKey = GlobalKey<AnimatedListState>();
+
+  double _scrollPosition;
+
+  List<ItemProduct> _items = [];
+
   RestaurantService restaurantService = new RestaurantService();
+
+  final vnd = Currency.create('VND', 0, symbol: '₫');
 
   // list categories restaurant
   List<CategoryRestaurantModel> categories = [
@@ -54,12 +68,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   @override
   void initState() {
+
     setState(() {
       _loading = true;
     });
-    // TODO: implement initState
+
+    _scrollController = ScrollController();
+    _scrollController.addListener(_scrollListener);
+
     super.initState();
     initDataRestaurant();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future initDataRestaurant() async {
@@ -89,11 +114,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
       TextEditingController _nodeController = new TextEditingController();
 
+      listTextController.add(_nodeController);
+
+      // get all products
       ResultModel resProduct = await restaurantService.getProductsByParams(branchId , element.categoryId, '', "", 1, 50);
 
       if(resProduct.status && resProduct.data != null && resProduct.data.length > 0) {
         List<ProductRestaurantModel> products = [];
-
 
         for(int i = 0; i < resProduct.data.length; i++) {
           setState(() {
@@ -105,11 +132,30 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         } else {
         listTabsView.add([]);
        }
-    });
 
+      // get all categories
+      ResultModel resCategories = await restaurantService.getCategoryRestaurantById(branchId, element.categoryId);
+      if(resCategories.status && resCategories.data != null && resCategories.data.length > 0) {
+        List<CategoryMealRestaurantModel> categories = [];
+        for(int i = 0; i < resCategories.data.length - 1; i++) {
+          setState(() {
+            categories.add(CategoryMealRestaurantModel.fromJson(resCategories.data[i]));
+          });
+        }
+        listTabsCategories.add(categories);
+      } else {
+        listTabsCategories.add([]);
+      }
+    });
     setState(() {
       _loading = false;
-      print(listTabsView.length);
+      print(listTabsCategories.length);
+    });
+  }
+
+  _scrollListener() {
+    setState(() {
+      _scrollPosition = _scrollController.position.pixels;
     });
   }
 
@@ -117,8 +163,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget _buildAnyWidgets(BuildContext context, i) {
 
     Size size = MediaQuery.of(context).size;
-
-    List<CategoryRestaurantModel> listSub = [];
 
     return Container(
       child: Column(
@@ -165,7 +209,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
           ),
           AnimatedContainer(
-            width: selected ? size.width * 0.55 : 0.0,
+            width: selected ? size.width * 0.7 : 0.0,
             height: selected ? 50.0 : 0.0,
             duration: Duration(seconds: 1),
             padding: EdgeInsets.all(5),
@@ -175,16 +219,38 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    listSub != null ? Expanded (
+                    listTabsCategories != null && listTabsCategories.length > 0 && i < listTabsCategories.length != null ? Container(
+                      margin: EdgeInsets.only(top: 5, right: 10),
+                      height: 30,
+                      width: 40,
+                      decoration: BoxDecoration(
+                          border: Border.all(
+                              color: PrimaryGreenLightColor
+                          )
+                      ),
+                      child: TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _scrollController.animateTo(_scrollPosition <= 400 ? 0 : _scrollPosition - 400, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+                          });
+                        },
+                        child: Icon(
+                          Icons.keyboard_arrow_left,
+                          size: 30,
+                          color: PrimaryGreenLightColor,
+                        ),
+                      ),
+                    ) : Container(),
+                    listTabsCategories != null && listTabsCategories.length > 0 && i < listTabsCategories.length != null ? Expanded (
                       child: ListView.builder(
                           controller: _scrollController,
                           shrinkWrap: true,
                           scrollDirection: Axis.horizontal,
-                          itemCount:  listSub.length,
+                          itemCount:  listTabsCategories[i].length,
                           itemBuilder: (BuildContext context, int index) => Container(
                             margin: EdgeInsets.only(right: 10),
                             child: ChoiceChip(
-                              label: Text(listSub[index].categoryName),
+                              label: Text(listTabsCategories[i][index].categoryName),
                               selected: _value == index,
                               onSelected: (bool selected) {
                                 setState(() {
@@ -193,7 +259,29 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
                             ),
                           )),
-                    ) : Container()
+                    ) : Container(),
+                    listTabsCategories != null && listTabsCategories.length > 0 && i < listTabsCategories.length != null ? Container(
+                      margin: EdgeInsets.only(top: 5, left: 10),
+                      height: 30,
+                      width: 40,
+                      decoration: BoxDecoration(
+                          border: Border.all(
+                              color: PrimaryGreenLightColor
+                          )
+                      ),
+                      child: TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _scrollController.animateTo(_scrollPosition != null  ? _scrollPosition + 400 : 400, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+                          });
+                        },
+                        child: Icon(
+                          Icons.keyboard_arrow_right,
+                          size: 30,
+                          color: PrimaryGreenLightColor,
+                        ),
+                      ),
+                    ) : Container(),
                   ]
               ),
             ),
@@ -201,7 +289,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           AnimatedContainer(
               duration: Duration(seconds: 1),
               curve: Curves.fastOutSlowIn,
-              height: selected ? 345 : 425,
+              height: selected ? size.height - 240 : size.height - 200,
               margin: EdgeInsets.only(top: 10),
               width: size.width * 0.7,
               decoration: BoxDecoration(
@@ -250,6 +338,34 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                       child: TextButton(
                                         onPressed: () {
                                           setState(() {
+                                            int cnt;
+                                            if( _items !=null && _items.length > 0) {
+                                              for(int j = 0; j< _items.length; j++) {
+                                                if(listTabsView[i][index].id.toString() == _items[j].id.toString()) {
+                                                  cnt = j;
+                                                }
+                                              }
+                                              if(cnt == null) {
+                                                listKey.currentState.insertItem(0,
+                                                    duration: const Duration(
+                                                        milliseconds: 500));
+                                                final item = new ItemProduct(listTabsView[i][index].id.toString() ,listTabsView[i][index], 1);
+                                                _items = []
+                                                  ..add(item)
+                                                  ..addAll(_items);
+                                              } else {
+                                                _items[cnt].number = _items[cnt].number + 1;
+                                                _items = []..addAll(_items);
+                                              }
+                                            } else {
+                                              listKey.currentState.insertItem(0,
+                                                  duration: const Duration(
+                                                      milliseconds: 500));
+                                              final item = new ItemProduct(listTabsView[i][index].id.toString(), listTabsView[i][index], 1);
+                                              _items = []
+                                                ..add(item)
+                                                ..addAll(_items);
+                                            }
                                           });
                                         },
                                         child: Column(
@@ -318,6 +434,187 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       ),
     );
   }
+
+  // TODO:
+  Widget _buildItem(BuildContext context, int index, animation) {
+    ItemProduct item = _items[index];
+    Size size = MediaQuery.of(context).size;
+    return SlideTransition(
+      position: Tween<Offset>(
+          begin: Offset(0.0, 1.0),
+          end: Offset(0.0, 0.0)
+      ).animate(animation),
+      child: Container(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Container(
+              width: size.width * 0.3,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Container(
+                      height: 60,
+                      width: size.width * 0.3,
+                      decoration: BoxDecoration(
+                          border: Border.all()
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Container(
+                              width: size.width * 0.2,
+                              child: Padding(
+                                padding: EdgeInsets.only(left: 10, top: 20),
+                                child: Text(item != null && item.product != null ? item.product.productName : '' , style: TextStyle(
+                                    fontSize: 17
+                                )),
+                              )
+                          ),
+                          Container(
+                            width: size.width * 0.12,
+                            margin: EdgeInsets.only(top: 10),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.only(),
+                                  height: 40,
+                                  width: 40,
+                                  decoration: BoxDecoration(
+                                      border: Border.all(
+                                          color: PrimaryGreenColor
+                                      )
+                                  ),
+                                  child: TextButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        if(_items[index].number > 1) {
+                                          _items[index].number = _items[index].number -1;
+                                          _items = []..addAll(_items);
+                                        } else {
+                                          if (_items.length == 1) {
+                                            listKey.currentState.removeItem(
+                                                0, (BuildContext context,
+                                                Animation<double> animation) {
+                                              return Container();
+                                            });
+                                            _items.removeAt(0);
+                                            return;
+                                          } else {
+                                            listKey.currentState.removeItem(
+                                                index,
+                                                    (_, animation) =>
+                                                    _buildItem(context, 0, animation),
+                                                duration: const Duration(milliseconds: 200)
+                                            );
+                                            _items.removeAt(index);
+                                          }
+                                        }
+                                      });
+                                    },
+                                    child:  Icon(
+                                      Icons.remove,
+                                      size: 20,
+                                      color: PrimaryGreenColor,
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  height: 40,
+                                  width: 40,
+                                  decoration: BoxDecoration(
+                                    color: PrimaryGreenColor,
+                                  ),
+                                  child: Center(
+                                    child: Text(item != null && item.number != null ? item.number.toString(): '' , style: TextStyle(
+                                      fontSize: 17,
+                                      color: Colors.white,
+                                    )),
+                                  ),
+                                ),
+                                Container(
+                                    height: 40,
+                                    width: 40,
+                                    decoration: BoxDecoration(
+                                        border: Border.all(
+                                            color: PrimaryGreenColor
+                                        )
+                                    ),
+                                    child: Container(
+                                      child: TextButton(
+                                        onPressed: () {
+                                          setState(() {
+                                            _items[index].number = _items[index].number + 1;
+                                            _items = []..addAll(_items);
+                                          });
+                                        },
+                                        child: Icon(
+                                          Icons.add,
+                                          size: 20,
+                                          color: PrimaryGreenColor,
+                                        ),
+                                      ),
+                                    )
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            width: size.width * 0.12,
+                            child: item != null ? Center(
+                              child: Text(item != null && item.product != null ?  Money.fromInt((item.product.price * item.number), vnd).format('###,### CCC').toString() : ''),
+                            ): Container(),
+                          ),
+                          Container(
+                            width: size.width * 0.04,
+                            child: TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  if (_items.length == 1) {
+                                    setState(() {
+                                      listKey.currentState.removeItem(
+                                          0,(BuildContext context, Animation<double> animation) {
+                                        return Container();
+                                      });
+                                      _items.removeAt(0);
+                                      return;
+                                    });
+                                  } else {
+                                    listKey.currentState.removeItem(
+                                        0,
+                                            (_, animation) => _buildItem(context, 0, animation),
+                                        duration: const Duration(milliseconds: 300)
+                                    );
+                                    setState(() {
+                                      _items.removeAt(0);
+                                    });
+                                  }
+                                });
+                              },
+                              child: Icon(
+                                Icons.remove_circle,
+                                size: 25,
+                                color: PrimaryGreenColor,
+                              ),
+                            ),
+                          )
+                        ],
+                      )
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
 
   Widget loading() {
     return Container(
@@ -470,7 +767,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         ),
                       ),
                       body: new TabBarView(
-                          controller: _tabController,
+//                          controller: _tabController,
                           children: List.generate(
                             categories.length , (index) => _buildAnyWidgets(context, index),
                           )
@@ -521,7 +818,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       ),
                       Container(
                         height: size.height - 240,
-
+                        decoration: BoxDecoration(
+                        ),
+                        child: Container(
+                          height: double.infinity,
+                          child: new AnimatedList(
+                            key: listKey,
+                            initialItemCount: _items.length,
+                            itemBuilder: (context, index, animation) {
+                              return _buildItem(context, index, animation);
+                            },
+                          ),
+                        ),
                       ),
                       Container(
                         height: 50,
@@ -563,6 +871,35 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         ),
       ),
     );
+  }
+}
+
+
+class ItemProduct {
+  String _id;
+
+  String get id => _id;
+
+  set id(String value) {
+    _id = value;
+  }
+
+  ProductRestaurantModel _product;
+  int _number;
+
+  int get number => _number;
+
+  set number(int value) {
+    _number = value;
+  }
+
+
+  ItemProduct(this._id, this._product, this._number);
+
+  ProductRestaurantModel get product => _product;
+
+  set product(ProductRestaurantModel value) {
+    _product = value;
   }
 
 }
