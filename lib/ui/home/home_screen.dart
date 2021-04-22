@@ -598,6 +598,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     UserModel userInfo  =  Provider.of<SettingProvider>(context, listen: false).userInfo;
 
+    int _total = 0;
+
+    if(_items != null && _items.length > 0) {
+      _items.forEach((element) {
+        _total += element.product.price * element.number;
+      });
+    }
+
     // TODO: implement build
     return _loading ? loading() : Scaffold(
       appBar: AppBar(
@@ -786,7 +794,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         ),
                       ),
                       Container(
-                        height: size.height - 240,
+                        height: size.height - 290,
                         decoration: BoxDecoration(
                         ),
                         child: Scrollbar(
@@ -801,6 +809,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             ),
                           ),
                         )
+                      ),
+                      Container(
+                        height: 30,
+                        margin: EdgeInsets.only(left: 10, right: 10, top: 10),
+                        child: Center(
+                          child: Text("Tổng tiền: ${Money.fromInt(_total, vnd).format('###,### CCC').toString()}" , style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold
+                          )),
+                        ),
                       ),
                       Container(
                         height: 50,
@@ -819,7 +837,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       ),
                       Container(
                         height: 50,
-                        margin: EdgeInsets.only(left: 10, right: 10, top: 10),
+                        margin: EdgeInsets.only(left: 10, right: 10, top: 10, bottom: 20),
                         width: size.width * 0.4,
                         decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(5.0),
