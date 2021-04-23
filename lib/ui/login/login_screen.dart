@@ -5,8 +5,11 @@ import 'package:pos_ios_bvhn/model/user/login_form_model.dart';
 import 'package:pos_ios_bvhn/model/user/user_model.dart';
 import 'package:pos_ios_bvhn/provider/setting_provider.dart';
 import 'package:pos_ios_bvhn/service/authen_service.dart';
+import 'package:pos_ios_bvhn/sqflite/model/user_model_sqflite.dart';
+import 'package:pos_ios_bvhn/sqflite/user_sqflite.dart';
 import 'package:pos_ios_bvhn/ui/login/branch_selection_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 import '../../constants.dart';
 
@@ -27,6 +30,43 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final authService = new AuthRepository();
+
+  FToast fToast;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    fToast = FToast();
+    fToast.init(context);
+  }
+
+  _showToast() {
+    Widget toast = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(25.0),
+        color: Colors.redAccent,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.check),
+          SizedBox(
+            width: 12.0,
+          ),
+          Text("Lỗi đăng nhập."),
+        ],
+      ),
+    );
+
+
+    fToast.showToast(
+      child: toast,
+      gravity: ToastGravity.BOTTOM_RIGHT,
+      toastDuration: Duration(seconds: 2),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -157,11 +197,31 @@ class _LoginScreenState extends State<LoginScreen> {
                if(res.status) {
                  UserModel userInfo =  UserModel.fromJson(res.data);
                  Provider.of<SettingProvider>(context, listen: false).setUserInfo(userInfo);
+
+                 // save data login in sqflite database
+                 UserModelSqflite userLiteDate = new UserModelSqflite(
+                   id: 1,
+                   name: userInfo.name,
+                   userName: userInfo.userName,
+                   email: userInfo.email,
+                   branchId: userInfo.branchId,
+                   branchCode: userInfo.branchCode,
+                   branchName: userInfo.branchName,
+                   roleId: userInfo.roleId,
+                   roleName: userInfo.roleName,
+                   roleCode: userInfo.roleCode,
+                 );
+
+                 UserSqfLite userSqfLite = new UserSqfLite();
+
+                 userSqfLite.insert(userLiteDate);
+
                  Navigator.push(context,
                      MaterialPageRoute(builder: (context) => BranchSelectionScreen())
                  );
                } else {
                  // TODO: AUTH FAILED
+                 _showToast();
                }
             }
           },
@@ -177,12 +237,6 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: Stack(
         children: <Widget>[
-          // Image.asset(
-          //   "assets/image/background.jpg",
-          //   height: MediaQuery.of(context).size.height,
-          //   width: MediaQuery.of(context).size.width,
-          //   fit: BoxFit.cover,
-          // ),
           Scaffold(
             backgroundColor: Colors.transparent,
             body: SafeArea(
@@ -192,15 +246,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     margin: EdgeInsets.only(top: 100),
                     width: size.width * 0.5,
                     decoration: BoxDecoration(
-                      // borderRadius: BorderRadius.circular(20),
-                      // color: PrimaryBlackColor.withOpacity(0.8),
-                      // boxShadow: [
-                      //   BoxShadow(
-                      //     color: Colors.grey.withOpacity(0.5),
-                      //     spreadRadius: 3,
-                      //     blurRadius: 6,
-                      //   ),
-                      // ],
                     ),
                     child: Form(
                       key: _formKey,
@@ -235,5 +280,4 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-
 }

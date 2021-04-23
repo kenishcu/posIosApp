@@ -1,10 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:pos_ios_bvhn/components/drawer.dart';
 import 'package:pos_ios_bvhn/model/restaurant/category_meal_restaurant_model.dart';
 import 'package:pos_ios_bvhn/model/restaurant/category_restaurant_model.dart';
 import 'package:pos_ios_bvhn/model/restaurant/product_restaurant_model.dart';
 import 'package:pos_ios_bvhn/model/results_model.dart';
 import 'package:pos_ios_bvhn/model/table/table_model.dart';
+import 'package:pos_ios_bvhn/model/user/user_model.dart';
 import 'package:pos_ios_bvhn/provider/setting_provider.dart';
 import 'package:pos_ios_bvhn/service/restaurant_service.dart';
 import 'package:provider/provider.dart';
@@ -15,8 +17,6 @@ import '../../constants.dart';
 class HomeScreen extends StatefulWidget {
 
   final TableModel table;
-
-  List<bool> _canLoadMores = [];
 
   HomeScreen({Key key,@required this.table}) : super(key: key);
 
@@ -373,7 +373,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                           mainAxisAlignment: MainAxisAlignment.start,
                                           children: [
                                             Container(
-                                              height: 100,
+                                              height: 80,
                                               decoration: new BoxDecoration(
                                                 image: new DecorationImage(
                                                   image:  NetworkImage( "https://nhapi.hongngochospital.vn" + listTabsView[i][index].imageUrl),
@@ -383,7 +383,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                             ),
                                             Container(
                                               height: 23,
-                                              margin: EdgeInsets.only(top: 5, left: 10),
+                                              margin: EdgeInsets.only(top: 3, left: 10),
                                               child: Text(listTabsView[i][index].productName,
                                                   overflow: TextOverflow.ellipsis,
                                                   style: TextStyle(
@@ -398,7 +398,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                                 padding: EdgeInsets.only(bottom: 0, right: 5),
                                                 child:  Align(
                                                   alignment: Alignment.bottomRight,
-                                                  child: Text(listTabsView[i][index].price.toString(), style: TextStyle(
+                                                  child: Text( Money.fromInt((listTabsView[i][index].price), vnd).format('###,### CCC').toString() , style: TextStyle(
                                                       fontSize: 13,
                                                       fontWeight: FontWeight.bold
                                                   )),
@@ -445,171 +445,137 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           end: Offset(0.0, 0.0)
       ).animate(animation),
       child: Container(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Container(
-              width: size.width * 0.3,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  Container(
-                      height: 60,
-                      width: size.width * 0.3,
-                      decoration: BoxDecoration(
-                          border: Border.all()
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          Container(
-                              width: size.width * 0.2,
-                              child: Padding(
-                                padding: EdgeInsets.only(left: 10, top: 20),
-                                child: Text(item != null && item.product != null ? item.product.productName : '' , style: TextStyle(
-                                    fontSize: 17
-                                )),
-                              )
-                          ),
-                          Container(
-                            width: size.width * 0.12,
-                            margin: EdgeInsets.only(top: 10),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                Container(
-                                  padding: EdgeInsets.only(),
-                                  height: 40,
-                                  width: 40,
-                                  decoration: BoxDecoration(
-                                      border: Border.all(
-                                          color: PrimaryGreenColor
-                                      )
-                                  ),
-                                  child: TextButton(
-                                    onPressed: () {
-                                      setState(() {
-                                        if(_items[index].number > 1) {
-                                          _items[index].number = _items[index].number -1;
-                                          _items = []..addAll(_items);
-                                        } else {
-                                          if (_items.length == 1) {
-                                            listKey.currentState.removeItem(
-                                                0, (BuildContext context,
-                                                Animation<double> animation) {
-                                              return Container();
-                                            });
-                                            _items.removeAt(0);
-                                            return;
-                                          } else {
-                                            listKey.currentState.removeItem(
-                                                index,
-                                                    (_, animation) =>
-                                                    _buildItem(context, 0, animation),
-                                                duration: const Duration(milliseconds: 200)
-                                            );
-                                            _items.removeAt(index);
-                                          }
-                                        }
-                                      });
-                                    },
-                                    child:  Icon(
-                                      Icons.remove,
-                                      size: 20,
-                                      color: PrimaryGreenColor,
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  height: 40,
-                                  width: 40,
-                                  decoration: BoxDecoration(
-                                    color: PrimaryGreenColor,
-                                  ),
-                                  child: Center(
-                                    child: Text(item != null && item.number != null ? item.number.toString(): '' , style: TextStyle(
-                                      fontSize: 17,
-                                      color: Colors.white,
-                                    )),
-                                  ),
-                                ),
-                                Container(
-                                    height: 40,
-                                    width: 40,
-                                    decoration: BoxDecoration(
-                                        border: Border.all(
-                                            color: PrimaryGreenColor
-                                        )
-                                    ),
-                                    child: Container(
-                                      child: TextButton(
-                                        onPressed: () {
-                                          setState(() {
-                                            _items[index].number = _items[index].number + 1;
-                                            _items = []..addAll(_items);
-                                          });
-                                        },
-                                        child: Icon(
-                                          Icons.add,
-                                          size: 20,
-                                          color: PrimaryGreenColor,
-                                        ),
-                                      ),
-                                    )
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            width: size.width * 0.12,
-                            child: item != null ? Center(
-                              child: Text(item != null && item.product != null ?  Money.fromInt((item.product.price * item.number), vnd).format('###,### CCC').toString() : ''),
-                            ): Container(),
-                          ),
-                          Container(
-                            width: size.width * 0.04,
-                            child: TextButton(
-                              onPressed: () {
-                                setState(() {
-                                  if (_items.length == 1) {
-                                    setState(() {
-                                      listKey.currentState.removeItem(
-                                          0,(BuildContext context, Animation<double> animation) {
-                                        return Container();
-                                      });
-                                      _items.removeAt(0);
-                                      return;
-                                    });
-                                  } else {
-                                    listKey.currentState.removeItem(
-                                        0,
-                                            (_, animation) => _buildItem(context, 0, animation),
-                                        duration: const Duration(milliseconds: 300)
-                                    );
-                                    setState(() {
-                                      _items.removeAt(0);
-                                    });
-                                  }
-                                });
-                              },
-                              child: Icon(
-                                Icons.remove_circle,
-                                size: 25,
-                                color: PrimaryGreenColor,
-                              ),
-                            ),
-                          )
-                        ],
+        margin: EdgeInsets.only(bottom: 5),
+        child: Container(
+          width: size.width * 0.3,
+          decoration: BoxDecoration(
+            color: kPrimaryLightColor,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Container(
+                  height: 30,
+                  width: size.width * 0.3,
+                  child: Container(
+                      height: 30,
+                      padding: EdgeInsets.only(left: 4),
+                      width: size.width * 0.3 - 2,
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(item != null && item.product != null ? item.product.productName : '' ,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                fontSize: 17
+                            )),
                       )
-                  ),
-                ],
+                  )
               ),
-            ),
-          ],
+              Container(
+                height: 40,
+                width: size.width * 0.3,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 40,
+                      width: size.width * 0.13,
+                      padding: EdgeInsets.only(left: 4),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text( Money.fromInt((item.product.price * item.number), vnd).format('###,### CCC').toString() , style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold
+                        )),
+                      )
+                    ),
+                    Container(
+                      padding: EdgeInsets.only(),
+                      height: 40,
+                      width: 40,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: PrimaryGreenColor
+                        )
+                      ),
+                      child: TextButton(
+                        onPressed: () {
+                          setState(() {
+                            if(_items[index].number > 1) {
+                              _items[index].number = _items[index].number -1;
+                              _items = []..addAll(_items);
+                            } else {
+                              if (_items.length == 1) {
+                                listKey.currentState.removeItem(
+                                    0, (BuildContext context,
+                                    Animation<double> animation) {
+                                  return Container();
+                                });
+                                _items.removeAt(0);
+                                return;
+                              } else {
+                                listKey.currentState.removeItem(
+                                    index,
+                                        (_, animation) =>
+                                        _buildItem(context, 0, animation),
+                                    duration: const Duration(milliseconds: 200)
+                                );
+                                _items.removeAt(index);
+                              }
+                            }
+                          });
+                        },
+                        child:  Icon(
+                          Icons.remove,
+                          size: 20,
+                          color: PrimaryGreenColor,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      height: 40,
+                      width: 50,
+                      decoration: BoxDecoration(
+                        color: PrimaryGreenColor,
+                      ),
+                      child: Center(
+                        child: Text(item != null && item.number != null ? item.number.toString(): '' , style: TextStyle(
+                          fontSize: 17,
+                          color: Colors.white,
+                        )),
+                      ),
+                    ),
+                    Container(
+                        height: 40,
+                        width: 40,
+                        decoration: BoxDecoration(
+                            border: Border.all(
+                                color: PrimaryGreenColor
+                            )
+                        ),
+                        child: Container(
+                          child: TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _items[index].number = _items[index].number + 1;
+                                _items = []..addAll(_items);
+                              });
+                            },
+                            child: Icon(
+                              Icons.add,
+                              size: 20,
+                              color: PrimaryGreenColor,
+                            ),
+                          ),
+                        )
+                    ),
+                  ],
+                ),
+              )
+            ],
+          ),
         ),
       ),
     );
@@ -628,6 +594,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
 
     Size size = MediaQuery.of(context).size;
+
+    int _total = 0;
+
+    if(_items != null && _items.length > 0) {
+      _items.forEach((element) {
+        _total += element.product.price * element.number;
+      });
+    }
 
     // TODO: implement build
     return _loading ? loading() : Scaffold(
@@ -651,85 +625,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
         ),
       ),
-      drawer: Drawer(
-        child: Container(
-          decoration: BoxDecoration(
-//              borderRadius: BorderRadius.only(
-//                topRight: Radius.circular(10.0),
-//                bottomRight:  Radius.circular(10.0),
-//              ),
-              color: Color(0xFF0e1e2b)
-          ),
-          child: ListView(
-            // Important: Remove any padding from the ListView.
-            padding: EdgeInsets.zero,
-            children: <Widget>[
-              Container(
-                child: DrawerHeader(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Container(
-                        height: 40,
-                        child: Text("Tài khoản : hoaint", style: TextStyle(
-                            color: Colors.white
-                        )),
-                      ),
-                      Container(
-                        height: 40,
-                        child: Text("Quyền admin, Chi nhánh Yên Ninh", style: TextStyle(
-                            color: Color(0xFF848b92)
-                        )),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                    color: Color(0xFF0e1e2b)
-                ),
-                child: ListTile(
-                  leading: Icon(
-                    Icons.repeat,
-                    color: Colors.white,
-                  ),
-                  title: Text('Chọn chi nhánh', style: TextStyle(
-                    color: Colors.white,
-                  )),
-                  onTap: () {
-                    // Update the state of the app
-                    // ...
-                    // Then close the drawer
-                    Navigator.pop(context);
-                  },
-                ),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                    color: Color(0xFF0e1e2b)
-                ),
-                child: ListTile(
-                  leading: Icon(
-                    Icons.logout,
-                    color: Colors.white,
-                  ),
-                  title: Text('Đăng xuất', style: TextStyle(
-                    color: Colors.white,
-                  )),
-                  onTap: () {
-                    // Update the state of the app
-                    // ...
-                    // Then close the drawer
-                    Navigator.pop(context);
-                  },
-                ),
-              )
-            ],
-          ),
-        ),
-      ),
+      drawer: DrawerCustom(),
       body: _loading ? loading() : SingleChildScrollView(
         child: Container(
           height: size.height - 50,
@@ -809,7 +705,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               ),
                             ),
                             Container(
-                              child: Text(" Bàn 1", style: TextStyle(
+                              child: Text("${widget.table.tableName}", style: TextStyle(
                                 fontWeight: FontWeight.bold
                               )),
                             )
@@ -817,18 +713,30 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         ),
                       ),
                       Container(
-                        height: size.height - 240,
+                        height: size.height - 290,
                         decoration: BoxDecoration(
                         ),
-                        child: Container(
-                          height: double.infinity,
-                          child: new AnimatedList(
-                            key: listKey,
-                            initialItemCount: _items.length,
-                            itemBuilder: (context, index, animation) {
-                              return _buildItem(context, index, animation);
-                            },
+                        child: Scrollbar(
+                          child: Container(
+                            height: double.infinity,
+                            child: new AnimatedList(
+                              key: listKey,
+                              initialItemCount: _items.length,
+                              itemBuilder: (context, index, animation) {
+                                return _buildItem(context, index, animation);
+                              },
+                            ),
                           ),
+                        )
+                      ),
+                      Container(
+                        height: 30,
+                        margin: EdgeInsets.only(left: 10, right: 10, top: 10),
+                        child: Center(
+                          child: Text("Tổng tiền: ${Money.fromInt(_total, vnd).format('###,### CCC').toString()}" , style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold
+                          )),
                         ),
                       ),
                       Container(
@@ -848,7 +756,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       ),
                       Container(
                         height: 50,
-                        margin: EdgeInsets.only(left: 10, right: 10, top: 10),
+                        margin: EdgeInsets.only(left: 10, right: 10, top: 10, bottom: 20),
                         width: size.width * 0.4,
                         decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(5.0),
@@ -892,7 +800,6 @@ class ItemProduct {
   set number(int value) {
     _number = value;
   }
-
 
   ItemProduct(this._id, this._product, this._number);
 

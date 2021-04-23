@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pos_ios_bvhn/provider/setting_provider.dart';
+import 'package:pos_ios_bvhn/sqflite/model/user_model_sqflite.dart';
+import 'package:pos_ios_bvhn/sqflite/user_sqflite.dart';
 import 'package:pos_ios_bvhn/ui/home/home_screen.dart';
 import 'package:pos_ios_bvhn/ui/home/table_screen.dart';
 import 'package:pos_ios_bvhn/ui/login/branch_selection_screen.dart';
@@ -14,6 +16,24 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
+
+  int cnt = 0;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    checkStateInit();
+  }
+
+  Future checkStateInit() async {
+    UserSqfLite userSqfLite = new UserSqfLite();
+    int c = await userSqfLite.queryRowCount();
+    setState(() {
+      cnt = c;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     // TODO: implement build
@@ -26,7 +46,7 @@ class _AppState extends State<App> {
           ),
           debugShowCheckedModeBanner: false,
           routes: {
-            '/': (context) => LoginScreen()
+            '/': (context) => cnt > 0 ? TableScreen() : LoginScreen()
           },
         ),
       ),

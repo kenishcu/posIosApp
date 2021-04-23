@@ -18,7 +18,7 @@ const PrimaryGreenLightColor = Color(0xFF009946);
 const PrimaryGreenColor = const Color(0xFF066b36);
 // orange colors
 const PrimaryOrangeColor =  const Color(0xFFeb9c16);
-
+const kPrimaryLightColor = Color(0xffDFF2EB);
 // styles
 
 

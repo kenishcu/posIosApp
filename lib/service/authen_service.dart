@@ -19,16 +19,17 @@ class AuthRepository {
       return ResultModel.fromJson(response.data);
     } on DioError catch (e) {
       print("error: ");
-      throw (e.message);
+      print (e.message);
+      return ResultModel("", null, null, false);
     }
   }
 
-  Future<Map> logout() async {
+  Future<ResultModel> logout() async {
     try {
       Response response = await client.dio.get(
         API_URL + '/logout',
       );
-      return response.data;
+      return ResultModel.fromJson(response.data);
     } on DioError catch (e) {
       throw (e.message);
     }

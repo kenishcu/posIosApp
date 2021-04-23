@@ -1,10 +1,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:pos_ios_bvhn/components/drawer.dart';
 import 'package:pos_ios_bvhn/model/results_model.dart';
 import 'package:pos_ios_bvhn/model/table/position_table_model.dart';
 import 'package:pos_ios_bvhn/model/table/table_model.dart';
+import 'package:pos_ios_bvhn/model/user/branch_model.dart';
+import 'package:pos_ios_bvhn/model/user/role_model.dart';
+import 'package:pos_ios_bvhn/model/user/user_model.dart';
 import 'package:pos_ios_bvhn/provider/setting_provider.dart';
 import 'package:pos_ios_bvhn/service/table_service.dart';
+import 'package:pos_ios_bvhn/sqflite/model/user_model_sqflite.dart';
+import 'package:pos_ios_bvhn/sqflite/user_sqflite.dart';
 import 'package:pos_ios_bvhn/ui/home/home_screen.dart';
 import 'package:provider/provider.dart';
 import '../../constants.dart';
@@ -34,6 +40,24 @@ class _TableScreenState extends State<TableScreen> {
   }
 
   Future initData() async {
+
+    //TODO:
+    UserSqfLite userSqfLite = new UserSqfLite();
+    int c = await userSqfLite.queryRowCount();
+
+    if(c > 0) {
+      UserModelSqflite userModelSqflite = await userSqfLite.findById(1);
+      BranchModel newBranchModel = new BranchModel(userModelSqflite.branchId,
+          userModelSqflite.branchName, userModelSqflite.branchCode, 1);
+      RoleModel newRoleModel = new RoleModel(userModelSqflite.roleId,
+          userModelSqflite.roleCode, userModelSqflite.roleName);
+      UserModel userInfo = new UserModel(userModelSqflite.name, userModelSqflite.email, userModelSqflite.userName,
+          newBranchModel, userModelSqflite.branchId, userModelSqflite.branchCode,  userModelSqflite.branchName,
+          newRoleModel, userModelSqflite.roleId,
+          userModelSqflite.roleCode, userModelSqflite.roleName);
+      Provider.of<SettingProvider>(context, listen: false).setUserInfo(userInfo);
+      // update user information from cache sqflite
+    }
 
     String branchId = Provider.of<SettingProvider>(context, listen: false).userInfo.branchId;
 
@@ -87,85 +111,7 @@ class _TableScreenState extends State<TableScreen> {
           ),
         ),
       ),
-      drawer: Drawer(
-        child: Container(
-          decoration: BoxDecoration(
-//              borderRadius: BorderRadius.only(
-//                topRight: Radius.circular(10.0),
-//                bottomRight:  Radius.circular(10.0),
-//              ),
-              color: Color(0xFF0e1e2b)
-          ),
-          child: ListView(
-            // Important: Remove any padding from the ListView.
-            padding: EdgeInsets.zero,
-            children: <Widget>[
-              Container(
-                child: DrawerHeader(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Container(
-                        height: 40,
-                        child: Text("Tài khoản : hoaint", style: TextStyle(
-                            color: Colors.white
-                        )),
-                      ),
-                      Container(
-                        height: 40,
-                        child: Text("Quyền admin, Chi nhánh Yên Ninh", style: TextStyle(
-                            color: Color(0xFF848b92)
-                        )),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                    color: Color(0xFF0e1e2b)
-                ),
-                child: ListTile(
-                  leading: Icon(
-                    Icons.repeat,
-                    color: Colors.white,
-                  ),
-                  title: Text('Chọn chi nhánh', style: TextStyle(
-                    color: Colors.white,
-                  )),
-                  onTap: () {
-                    // Update the state of the app
-                    // ...
-                    // Then close the drawer
-                    Navigator.pop(context);
-                  },
-                ),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                    color: Color(0xFF0e1e2b)
-                ),
-                child: ListTile(
-                  leading: Icon(
-                    Icons.logout,
-                    color: Colors.white,
-                  ),
-                  title: Text('Đăng xuất', style: TextStyle(
-                    color: Colors.white,
-                  )),
-                  onTap: () {
-                    // Update the state of the app
-                    // ...
-                    // Then close the drawer
-                    Navigator.pop(context);
-                  },
-                ),
-              )
-            ],
-          ),
-        ),
-      ),
+      drawer: DrawerCustom(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.start,

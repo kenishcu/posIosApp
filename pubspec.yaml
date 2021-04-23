@@ -32,7 +32,9 @@ dependencies:
   shared_preferences: ^2.0.5
   provider: ^5.0.0
   money2: ^2.0.2
-
+  sqflite: ^2.0.0+3
+  fluttertoast: ^8.0.6
+  path_provider: ^2.0.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -49,8 +51,7 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  assets:
-    - lib/data/
+  # assets:
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
