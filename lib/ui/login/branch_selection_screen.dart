@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:pos_ios_bvhn/components/drawer.dart';
 import 'package:pos_ios_bvhn/model/restaurant/branch_restaurant_model.dart';
 import 'package:pos_ios_bvhn/model/results_model.dart';
 import 'package:pos_ios_bvhn/model/user/branch_model.dart';
@@ -47,62 +48,68 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen> {
 
     Size size = MediaQuery.of(context).size;
 
+
     // TODO: implement build
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              height: 60,
-              width: size.width * 1,
-              decoration: BoxDecoration(
-                color: Color(0xFFf4f5f7)
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    height: 45,
-                    width: 120,
-                    margin: EdgeInsets.only(left: 20),
-                    decoration: BoxDecoration(
+      appBar: AppBar(
+        iconTheme: IconThemeData(color: Color(0xFF848a93),),
+        backgroundColor: Color(0xFFf4f5f7),
+        leading: new Container(
+          width: 5,
+        ),
+        title: Container(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                  height: 45,
+                  width: 120,
+                  margin: EdgeInsets.only(left: 0),
+                  decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10.0),
                       color: Colors.white
-                    ),
-                    child: TextButton(
-                      onPressed: () {  },
-                      child: Text("Đăng nhập lại", style: TextStyle(
-
-                      )),
-                    )
                   ),
-                  Container(
-                    height: 45,
-                    width: 150,
-                    margin: EdgeInsets.only(right: 20),
-                    child: Stack(
-                      children: [
-                        Positioned(
-                            top: 10,
-                            left: 20,
-                            child: Icon(
+                  child: TextButton(
+                    onPressed: () {
+
+                    },
+                    child: Text(" Đăng nhập lại", style: TextStyle(
+                      color: Colors.grey
+                    )),
+                  )
+              ),
+              Container(
+                height: 45,
+                width: 200,
+                margin: EdgeInsets.only(right: 20),
+                child: Stack(
+                  children: [
+                    Positioned(
+                        top: 10,
+                        left: 0,
+                        child: Icon(
                           Icons.circle,
                           size: 15,
                           color: Color(0xFF2ea85b),
                         )
-                        ),
-                        Padding(
-                          padding: EdgeInsets.only(left: 40, top: 10),
-                          child: Text("Restaurant open", style: TextStyle(
-
-                          )),
-                        )
-                      ],
                     ),
-                  )
-                ],
-              ),
-            ),
+                    Padding(
+                      padding: EdgeInsets.only(left: 20, top: 5),
+                      child: Text("Restaurant open", style: TextStyle(
+                        color: Colors.grey
+                      )),
+                    )
+                  ],
+                ),
+              )
+            ],
+          ),
+        ),
+      ),
+      // drawer: DrawerCustom(),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
             Container(
               height: size.height - 60,
               width: size.width * 1,

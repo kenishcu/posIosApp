@@ -21,6 +21,7 @@ class RestaurantService {
           data: {'n': 1,'p': 50},
           options: Options(method: 'GET')
       );
+      print(response.data);
       return ResultModel.fromJson(response.data);
     } on DioError catch (e) {
       print("error: ");
@@ -29,13 +30,15 @@ class RestaurantService {
   }
 
 
-  Future<ResultModel> getCategoryRestaurantById(String branchId, String parentId) async {
+  Future<ResultModel> getCategoryRestaurantByParams(String branchId, String parentId, String keyword, status) async {
     try {
       Response response = await client.dio.request(
-          API_URL + '/categories?parent_id=${parentId.toString()}&branch_id=${branchId.toString()}',
+          API_URL + '/categories?parent_id=${parentId.toString()}&branch_id=${branchId.toString()}'
+              '&keyword=${keyword.toString()}&status=${status.toString()}',
           data: {'n': 1,'p': 50},
           options: Options(method: 'GET')
       );
+      print(response.data);
       return ResultModel.fromJson(response.data);
     } on DioError catch (e) {
       print("error: ");
@@ -43,7 +46,7 @@ class RestaurantService {
     }
   }
 
-  Future<ResultModel>  getCategoryParentRestaurant() async {
+  Future<ResultModel> getCategoryParentRestaurant() async {
     try {
       String data = await rootBundle.loadString('lib/data/category_restaurant.json');
       return ResultModel.fromJson(json.decode(data));

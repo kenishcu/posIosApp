@@ -215,29 +215,12 @@ class _TableScreenState extends State<TableScreen> {
                                       mainAxisAlignment: MainAxisAlignment.start,
                                       children: [
                                         Container(
-                                          child: Row(
-                                            children: [
-                                              Container(
-                                                width: 120,
-                                                child: Padding(
-                                                  padding: EdgeInsets.only(left: 20, top: 10),
-                                                  child: Text(tables[index].tableName, style: TextStyle(
-                                                      fontSize: 25,
-                                                      color: Colors.white
-                                                  )),
-                                                ),
-                                              ),
-                                              Container(
-                                                  width: 50,
-                                                  child:Padding(
-                                                    padding:  EdgeInsets.only(top: 10, left: 10),
-                                                    child: Text("", style: TextStyle(
-                                                        fontSize: 20,
-                                                        color: Colors.white
-                                                    )),
-                                                  )
-                                              )
-                                            ],
+                                          child: Padding(
+                                            padding: EdgeInsets.only(left: 0, top: 10),
+                                            child: Text(tables[index].tableName, style: TextStyle(
+                                                fontSize: 25,
+                                                color: Colors.white
+                                            )),
                                           ),
                                         ),
                                         Container(

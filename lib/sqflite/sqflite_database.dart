@@ -17,9 +17,9 @@ class SqfLiteDatabase {
   static final columnBranchId = 'branchId';
   static final columnBranchCode = 'branchCode';
   static final columnBranchName = 'branchName';
-  static final columnRoleId = 'columnRoleId';
-  static final columnRoleCode = 'columnRoleCode';
-  static final columnRoleName = 'columnRoleName';
+  static final columnRoleId = 'roleId';
+  static final columnRoleCode = 'roleCode';
+  static final columnRoleName = 'roleName';
 
   SqfLiteDatabase._privateConstructor();
 
@@ -49,12 +49,12 @@ class SqfLiteDatabase {
             $columnName TEXT NOT NULL,
             $columnUsername TEXT NOT NULL,
             $columnEmail TEXT NOT NULL,
-            $columnBranchId INTEGER NOT NULL,
+            $columnBranchId TEXT NOT NULL,
             $columnBranchName TEXT NOT NULL,
             $columnBranchCode TEXT NOT NULL,
             $columnRoleId INTEGER NOT NULL,
             $columnRoleName TEXT NOT NULL,
-            $columnRoleCode INTEGER
+            $columnRoleCode TEXT NOT NUll
           )
           ''');
   }

@@ -45,6 +45,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   List<TextEditingController> listTextController = [];
 
+  TextEditingController _nodeTextController =  new TextEditingController();
+
+  CategoryMealRestaurantModel selectedCategoryMealRestaurant;
+
   final GlobalKey<AnimatedListState> listKey = GlobalKey<AnimatedListState>();
 
   double _scrollPosition;
@@ -52,6 +56,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   List<ItemProduct> _items = [];
 
   RestaurantService restaurantService = new RestaurantService();
+
 
   final vnd = Currency.create('VND', 0, symbol: '₫');
 
@@ -97,49 +102,223 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
       _canLoadMores.add(false);
 
-      setState(() {
-        listWidget.add(new Container(
-          height: 40,
-          decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10)
-          ),
-          child:  Align(
-            alignment: Alignment.center,
-            child: Text( element.categoryName, style: TextStyle(
-                color: PrimaryGreyColor
-            )),
-          ),
-        ));
-      });
+      if(element.categoryCode == "nha_bep") {
 
-      TextEditingController _nodeController = new TextEditingController();
+        print("Nha bep");
+        TextEditingController _nodeController = new TextEditingController();
 
-      listTextController.add(_nodeController);
+        listTextController.add(_nodeController);
 
-      // get all products
-      ResultModel resProduct = await restaurantService.getProductsByParams(branchId , element.categoryId, '', "", 1, 50);
+        // get all products
+        ResultModel resProduct = await restaurantService.getProductsByParams(branchId , element.categoryId, '', "", 1, 50);
 
-      if(resProduct.status && resProduct.data != null && resProduct.data.length > 0) {
-        List<ProductRestaurantModel> products = [];
+        if(resProduct.status && resProduct.data != null && resProduct.data.length > 0) {
+          List<ProductRestaurantModel> products = [];
 
-        for(int i = 0; i < resProduct.data.length; i++) {
+          for(int i = 0; i < resProduct.data.length; i++) {
+            setState(() {
+              ProductRestaurantModel product = ProductRestaurantModel.fromJson(resProduct.data[i]);
+              // if(product.status == 1) {
+              //   products.add(ProductRestaurantModel.fromJson(resProduct.data[i]));
+              // }
+              products.add(ProductRestaurantModel.fromJson(resProduct.data[i]));
+            });
+          }
           setState(() {
-            products.add(ProductRestaurantModel.fromJson(resProduct.data[i]));
+            List<ProductRestaurantModel> pro = products;
+
+            if(listTabsView.length >= 1) {
+              listTabsView.insert(0, pro);
+            } else {
+              listTabsView.add(pro);
+            }
+          });
+        } else {
+          setState(() {
+            if(listTabsView.length >= 1) {
+              listTabsView.insert(0, []);
+            } else {
+              listTabsView.add([]);
+            }
           });
         }
-        List<ProductRestaurantModel> pro = products;
-        listTabsView.add(pro);
+
+        setState(() {
+          listWidget.add(new Container(
+            height: 60,
+            decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10)
+            ),
+            child:  Align(
+              alignment: Alignment.center,
+              child: Text( element.categoryName, style: TextStyle(
+                  color: PrimaryGreyColor,
+                  fontSize: 18
+              )),
+            ),
+          ));
+        });
+      } else if(element.categoryCode == "quay_bar") {
+        TextEditingController _nodeController = new TextEditingController();
+
+        listTextController.add(_nodeController);
+
+        // get all products
+        ResultModel resProduct = await restaurantService.getProductsByParams(branchId , element.categoryId, '', "", 1, 50);
+
+        if(resProduct.status && resProduct.data != null && resProduct.data.length > 0) {
+          List<ProductRestaurantModel> products = [];
+
+          for(int i = 0; i < resProduct.data.length; i++) {
+            setState(() {
+              ProductRestaurantModel product = ProductRestaurantModel.fromJson(resProduct.data[i]);
+              // if(product.status == 1) {
+              //   products.add(ProductRestaurantModel.fromJson(resProduct.data[i]));
+              // }
+              products.add(ProductRestaurantModel.fromJson(resProduct.data[i]));
+            });
+          }
+          setState(() {
+            List<ProductRestaurantModel> pro = products;
+
+            if(listTabsView.length >= 2) {
+              listTabsView.insert(1, pro);
+            } else {
+              listTabsView.add(pro);
+            }
+          });
         } else {
-        listTabsView.add([]);
-       }
+          setState(() {
+            if(listTabsView.length >= 2) {
+              listTabsView.insert(1, []);
+            } else {
+              listTabsView.add([]);
+            }
+          });
+        }
+
+        setState(() {
+          listWidget.add(new Container(
+            height: 60,
+            decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10)
+            ),
+            child:  Align(
+              alignment: Alignment.center,
+              child: Text( element.categoryName, style: TextStyle(
+                  color: PrimaryGreyColor,
+                  fontSize: 18
+              )),
+            ),
+          ));
+        });
+      } else if(element.categoryCode == "quay_banh") {
+        TextEditingController _nodeController = new TextEditingController();
+
+        listTextController.add(_nodeController);
+
+        // get all products
+        ResultModel resProduct = await restaurantService.getProductsByParams(branchId , element.categoryId, '', "", 1, 50);
+
+        if(resProduct.status && resProduct.data != null && resProduct.data.length > 0) {
+          List<ProductRestaurantModel> products = [];
+
+          for(int i = 0; i < resProduct.data.length; i++) {
+            setState(() {
+              ProductRestaurantModel product = ProductRestaurantModel.fromJson(resProduct.data[i]);
+              // if(product.status == 1) {
+              //   products.add(ProductRestaurantModel.fromJson(resProduct.data[i]));
+              // }
+              products.add(ProductRestaurantModel.fromJson(resProduct.data[i]));
+            });
+          }
+          List<ProductRestaurantModel> pro = products;
+
+          if(listTabsView.length >= 3) {
+            listTabsView.insert(2, pro);
+          } else {
+            listTabsView.add(pro);
+          }
+          setState(() {});
+        } else {
+          if(listTabsView.length >= 3) {
+            listTabsView.insert(2, []);
+          } else {
+            listTabsView.add([]);
+          }
+          setState(() {});
+        }
+
+        setState(() {
+          listWidget.add(new Container(
+            height: 60,
+            decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10)
+            ),
+            child:  Align(
+              alignment: Alignment.center,
+              child: Text( element.categoryName, style: TextStyle(
+                  color: PrimaryGreyColor,
+                  fontSize: 18
+              )),
+            ),
+          ));
+        });
+      } else {
+        TextEditingController _nodeController = new TextEditingController();
+
+        listTextController.add(_nodeController);
+
+        // get all products
+        ResultModel resProduct = await restaurantService.getProductsByParams(branchId , element.categoryId, '', "", 1, 50);
+
+        if(resProduct.status && resProduct.data != null && resProduct.data.length > 0) {
+          List<ProductRestaurantModel> products = [];
+
+          for(int i = 0; i < resProduct.data.length; i++) {
+            setState(() {
+              ProductRestaurantModel product = ProductRestaurantModel.fromJson(resProduct.data[i]);
+              // if(product.status == 1) {
+              //   products.add(ProductRestaurantModel.fromJson(resProduct.data[i]));
+              // }
+              products.add(ProductRestaurantModel.fromJson(resProduct.data[i]));
+            });
+          }
+          List<ProductRestaurantModel> pro = products;
+          listTabsView.add(pro);
+          setState(() {});
+        } else {
+          listTabsView.add([]);
+          setState(() {});
+        }
+
+        setState(() {
+          listWidget.add(new Container(
+            height: 60,
+            decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10)
+            ),
+            child:  Align(
+              alignment: Alignment.center,
+              child: Text( element.categoryName, style: TextStyle(
+                  color: PrimaryGreyColor,
+                  fontSize: 18
+              )),
+            ),
+          ));
+        });
+      }
 
       // get all categories
-      ResultModel resCategories = await restaurantService.getCategoryRestaurantById(branchId, element.categoryId);
+      ResultModel resCategories = await restaurantService.getCategoryRestaurantByParams(branchId, element.categoryId, '', 1);
       if(resCategories.status && resCategories.data != null && resCategories.data.length > 0) {
         List<CategoryMealRestaurantModel> categories = [];
         for(int i = 0; i < resCategories.data.length - 1; i++) {
           setState(() {
-            categories.add(CategoryMealRestaurantModel.fromJson(resCategories.data[i]));
+            CategoryMealRestaurantModel category = CategoryMealRestaurantModel.fromJson(resCategories.data[i]);
+            if(category.status == 1) {
+              categories.add(category);
+            }
           });
         }
         listTabsCategories.add(categories);
@@ -149,7 +328,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     });
     setState(() {
       _loading = false;
-      print(listTabsCategories.length);
     });
   }
 
@@ -180,10 +358,24 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: Colors.black, width: 0.2),
                   ),
+                  child: TextField(
+                    controller: i < listTextController.length - 1 && listTextController[i] != null ? listTextController[i] : _nodeTextController,
+                    decoration: const InputDecoration(
+                      filled: true,
+                      hintText: 'Tìm kiếm',
+                      border: InputBorder.none,
+                      hintStyle: TextStyle(
+                        fontSize: 15,
+                        color: CupertinoColors.systemGrey,
+                        fontWeight: FontWeight.normal
+                      ),
+                    ),
+                    onChanged: (value) => _searchItems(value, i),
+                  ),
                 ),
                 Container(
-                  height: 35,
-                  width: 35,
+                  height: 40,
+                  width: 45,
                   margin: EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(5),
@@ -196,13 +388,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         selected = !selected;
                       });
                     },
-                    child: selected ? Icon(
-                      Icons.remove,
-                      color: Colors.black,
-                    ):  Icon(
-                      Icons.add,
-                      color: Colors.black,
-                    ),
+                    child: Padding(
+                      padding: EdgeInsets.only(left: 0),
+                      child: selected ? Icon(
+                        Icons.remove,
+                        color: Colors.black,
+                      ):  Icon(
+                        Icons.add,
+                        color: Colors.black,
+                      ),
+                    )
                   ),
                 )
               ],
@@ -221,8 +416,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   children: [
                     listTabsCategories != null && listTabsCategories.length > 0 && i < listTabsCategories.length != null ? Container(
                       margin: EdgeInsets.only(top: 5, right: 10),
-                      height: 30,
-                      width: 40,
+                      height: 40,
+                      width: 50,
                       decoration: BoxDecoration(
                           border: Border.all(
                               color: PrimaryGreenLightColor
@@ -234,6 +429,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             _scrollController.animateTo(_scrollPosition <= 400 ? 0 : _scrollPosition - 400, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
                           });
                         },
+                        style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: Size(50, 30),
+                              alignment: Alignment.center),
                         child: Icon(
                           Icons.keyboard_arrow_left,
                           size: 30,
@@ -254,6 +453,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               selected: _value == index,
                               onSelected: (bool selected) {
                                 setState(() {
+                                  _value = selected ? index : null;
+                                  _updateProductions(i, listTabsCategories[i][index].categoryId);
+                                  setState(() {
+                                    selectedCategoryMealRestaurant = listTabsCategories[i][index];
+                                  });
                                 });
                               },
 
@@ -262,8 +466,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     ) : Container(),
                     listTabsCategories != null && listTabsCategories.length > 0 && i < listTabsCategories.length != null ? Container(
                       margin: EdgeInsets.only(top: 5, left: 10),
-                      height: 30,
-                      width: 40,
+                      height: 40,
+                      width: 50,
                       decoration: BoxDecoration(
                           border: Border.all(
                               color: PrimaryGreenLightColor
@@ -275,6 +479,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             _scrollController.animateTo(_scrollPosition != null  ? _scrollPosition + 400 : 400, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
                           });
                         },
+                        style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: Size(50, 30),
+                            alignment: Alignment.center),
                         child: Icon(
                           Icons.keyboard_arrow_right,
                           size: 30,
@@ -289,7 +497,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           AnimatedContainer(
               duration: Duration(seconds: 1),
               curve: Curves.fastOutSlowIn,
-              height: selected ? size.height - 240 : size.height - 200,
+              height: selected ? size.height - 242 : size.height - 204,
               margin: EdgeInsets.only(top: 10),
               width: size.width * 0.7,
               decoration: BoxDecoration(
@@ -449,129 +657,172 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         child: Container(
           width: size.width * 0.3,
           decoration: BoxDecoration(
-            color: kPrimaryLightColor,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.start,
+          child: Row(
             children: [
               Container(
-                  height: 30,
-                  width: size.width * 0.3,
-                  child: Container(
-                      height: 30,
-                      padding: EdgeInsets.only(left: 4),
-                      width: size.width * 0.3 - 2,
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(item != null && item.product != null ? item.product.productName : '' ,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                                fontSize: 17
-                            )),
-                      )
-                  )
-              ),
-              Container(
-                height: 40,
-                width: size.width * 0.3,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
+                width: size.width * 0.26,
+                decoration: BoxDecoration(
+                  color: kPrimaryLightColor,
+                ),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Container(
-                      height: 40,
-                      width: size.width * 0.13,
-                      padding: EdgeInsets.only(left: 4),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text( Money.fromInt((item.product.price * item.number), vnd).format('###,### CCC').toString() , style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold
-                        )),
-                      )
-                    ),
-                    Container(
-                      padding: EdgeInsets.only(),
-                      height: 40,
-                      width: 40,
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: PrimaryGreenColor
-                        )
-                      ),
-                      child: TextButton(
-                        onPressed: () {
-                          setState(() {
-                            if(_items[index].number > 1) {
-                              _items[index].number = _items[index].number -1;
-                              _items = []..addAll(_items);
-                            } else {
-                              if (_items.length == 1) {
-                                listKey.currentState.removeItem(
-                                    0, (BuildContext context,
-                                    Animation<double> animation) {
-                                  return Container();
-                                });
-                                _items.removeAt(0);
-                                return;
-                              } else {
-                                listKey.currentState.removeItem(
-                                    index,
-                                        (_, animation) =>
-                                        _buildItem(context, 0, animation),
-                                    duration: const Duration(milliseconds: 200)
-                                );
-                                _items.removeAt(index);
-                              }
-                            }
-                          });
-                        },
-                        child:  Icon(
-                          Icons.remove,
-                          size: 20,
-                          color: PrimaryGreenColor,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      height: 40,
-                      width: 50,
-                      decoration: BoxDecoration(
-                        color: PrimaryGreenColor,
-                      ),
-                      child: Center(
-                        child: Text(item != null && item.number != null ? item.number.toString(): '' , style: TextStyle(
-                          fontSize: 17,
-                          color: Colors.white,
-                        )),
-                      ),
-                    ),
-                    Container(
-                        height: 40,
-                        width: 40,
-                        decoration: BoxDecoration(
-                            border: Border.all(
-                                color: PrimaryGreenColor
-                            )
-                        ),
+                        height: 30,
                         child: Container(
-                          child: TextButton(
-                            onPressed: () {
-                              setState(() {
-                                _items[index].number = _items[index].number + 1;
-                                _items = []..addAll(_items);
-                              });
-                            },
-                            child: Icon(
-                              Icons.add,
-                              size: 20,
-                              color: PrimaryGreenColor,
+                            height: 30,
+                            padding: EdgeInsets.only(left: 4),
+                            width: size.width * 0.3 - 2,
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(item != null && item.product != null ? item.product.productName : '' ,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                      fontSize: 17
+                                  )),
+                            )
+                        )
+                    ),
+                    Container(
+                      height: 40,
+                      width: size.width * 0.26,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                              height: 40,
+                              width: size.width * 0.13,
+                              padding: EdgeInsets.only(left: 4),
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text( Money.fromInt((item.product.price * item.number), vnd).format('###,### CCC').toString() , style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold
+                                )),
+                              )
+                          ),
+                          Container(
+                            padding: EdgeInsets.only(),
+                            height: 40,
+                            width: 40,
+                            decoration: BoxDecoration(
+                                border: Border.all(
+                                    color: PrimaryGreenColor
+                                )
+                            ),
+                            child: TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  if(_items[index].number > 1) {
+                                    _items[index].number = _items[index].number -1;
+                                    _items = []..addAll(_items);
+                                  } else {
+                                    if (_items.length == 1) {
+                                      listKey.currentState.removeItem(
+                                          0, (BuildContext context,
+                                          Animation<double> animation) {
+                                        return Container();
+                                      });
+                                      _items.removeAt(0);
+                                      return;
+                                    } else {
+                                      listKey.currentState.removeItem(
+                                          index,
+                                              (_, animation) =>
+                                              _buildItem(context, 0, animation),
+                                          duration: const Duration(milliseconds: 200)
+                                      );
+                                      _items.removeAt(index);
+                                    }
+                                  }
+                                });
+                              },
+                              child:  Icon(
+                                Icons.remove,
+                                size: 20,
+                                color: PrimaryGreenColor,
+                              ),
                             ),
                           ),
-                        )
-                    ),
+                          Container(
+                            height: 40,
+                            width: 50,
+                            decoration: BoxDecoration(
+                              color: PrimaryGreenColor,
+                            ),
+                            child: Center(
+                              child: Text(item != null && item.number != null ? item.number.toString(): '' , style: TextStyle(
+                                fontSize: 17,
+                                color: Colors.white,
+                              )),
+                            ),
+                          ),
+                          Container(
+                              height: 40,
+                              width: 40,
+                              decoration: BoxDecoration(
+                                  border: Border.all(
+                                      color: PrimaryGreenColor
+                                  )
+                              ),
+                              child: Container(
+                                child: TextButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _items[index].number = _items[index].number + 1;
+                                      _items = []..addAll(_items);
+                                    });
+                                  },
+                                  child: Icon(
+                                    Icons.add,
+                                    size: 20,
+                                    color: PrimaryGreenColor,
+                                  ),
+                                ),
+                              )
+                          ),
+                        ],
+                      ),
+                    )
                   ],
+                ),
+              ),
+              Container(
+                margin: EdgeInsets.only(left: size.width * 0.01),
+                width: size.width * 0.05,
+                height: 70,
+                decoration: BoxDecoration(
+                  color: PrimaryGreenLightColor
+                ),
+                child: TextButton(
+                  onPressed: () {
+                    setState(() {
+                      if(_items.length == 1) {
+                        listKey.currentState.removeItem( 0,
+                                (BuildContext context, animation) {
+                                  return Container();
+                                });
+                        _items.removeAt(0);
+                        return;
+                      } else {
+                        listKey.currentState.removeItem(index,
+                                (context, animation) => _buildItem(context, 0, animation),
+                                duration: const Duration(milliseconds: 300));
+                        _items.removeAt(index);
+                      }
+                    });
+                  },
+                  style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      alignment: Alignment.center),
+                  child: Icon(
+                    Icons.delete,
+                    size: 30,
+                    color: Colors.white,
+                  ),
                 ),
               )
             ],
@@ -581,6 +832,58 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
+  void _updateProductions(int index, String id) async {
+
+    String branchId = Provider.of<SettingProvider>(context, listen: false).userInfo.branchId;
+
+    ResultModel res = await restaurantService.getProductsByParams(branchId, "", id, listTextController[index].text, 1, 50);
+
+    if(res.status && res.data != null && res.data.length > 0) {
+      List<ProductRestaurantModel> product = [];
+      print('length: ${res.data.length}');
+      for(int i = 0; i < res.data.length ; i++) {
+        setState(() {
+          product.add(ProductRestaurantModel.fromJson(res.data[i]));
+        });
+      }
+      setState(() {
+        listTabsView[index].clear();
+        listTabsView[index] = []..addAll(product);
+      });
+    } else {
+      setState(() {
+        listTabsView[index].clear();
+      });
+    }
+  }
+
+  void _searchItems(String keySearch, int i) async {
+
+    String branchId = Provider.of<SettingProvider>(context, listen: false).userInfo.branchId;
+
+    String categoryId = selectedCategoryMealRestaurant != null ? selectedCategoryMealRestaurant.categoryId : "";
+
+    ResultModel res = await restaurantService.getProductsByParams(branchId, categories[i].categoryId, categoryId, keySearch, 1, 50);
+
+    setState(() {
+      if(res.status && res.data != null && res.data.length > 0) {
+        List<ProductRestaurantModel> product = [];
+        for(int i = 0; i < res.data.length ; i++) {
+          setState(() {
+            product.add(ProductRestaurantModel.fromJson(res.data[i]));
+          });
+        }
+        setState(() {
+          listTabsView[i].clear();
+          listTabsView[i] = []..addAll(product);
+        });
+      } else {
+        setState(() {
+          listTabsView[i].clear();
+        });
+      }
+    });
+  }
 
   Widget loading() {
     return Container(
@@ -647,7 +950,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     length: categories.length,
                     child: Scaffold(
                       appBar: PreferredSize(
-                        preferredSize: Size.fromHeight(50),
+                        preferredSize: Size.fromHeight(70),
                         child: new Container(
                           color: Color(0xfff7f7f7),
                           child: new SafeArea(
@@ -701,19 +1004,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           children: [
                             Container(
                               child: Icon(
-                                Icons.table_view_outlined
+                                Icons.table_view_outlined,
+                                size: 30,
+                                color: PrimaryGreenColor,
                               ),
                             ),
                             Container(
+                              margin: EdgeInsets.only(left: 10),
                               child: Text("${widget.table.tableName}", style: TextStyle(
-                                fontWeight: FontWeight.bold
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20
                               )),
                             )
                           ],
                         ),
                       ),
                       Container(
-                        height: size.height - 290,
+                        height: size.height - 310,
                         decoration: BoxDecoration(
                         ),
                         child: Scrollbar(
@@ -748,7 +1055,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           color: Colors.redAccent
                         ),
                         child: TextButton(
-                          onPressed: () {  },
+                          onPressed: () {
+                            for(var i = 0; i <= _items.length - 1; i++) {
+                              listKey.currentState.removeItem( 0,
+                                      (context, animation) {
+                                        return Container();
+                                      });
+                            }
+                            setState(() {
+                              _items.clear();
+                            });
+                          },
                           child: Text("HỦY ĐẶT", style: TextStyle(
                             color: Colors.white
                           )),
@@ -756,7 +1073,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       ),
                       Container(
                         height: 50,
-                        margin: EdgeInsets.only(left: 10, right: 10, top: 10, bottom: 20),
+                        margin: EdgeInsets.only(left: 10, right: 10, top: 10, bottom: 40),
                         width: size.width * 0.4,
                         decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(5.0),
