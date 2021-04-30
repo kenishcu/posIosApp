@@ -18,10 +18,8 @@ class RestaurantService {
           API_URL + '/product-in-menu?branch_id=${branchId.toString()}'
               '&category_id=${categoryId.toString()}'
               '&category_parent_id=${parentId.toString()}&query=${query.toString()}',
-          data: {'n': 1,'p': 50},
           options: Options(method: 'GET')
       );
-      print(response.data);
       return ResultModel.fromJson(response.data);
     } on DioError catch (e) {
       print("error: ");
@@ -35,10 +33,8 @@ class RestaurantService {
       Response response = await client.dio.request(
           API_URL + '/categories?parent_id=${parentId.toString()}&branch_id=${branchId.toString()}'
               '&keyword=${keyword.toString()}&status=${status.toString()}',
-          data: {'n': 1,'p': 50},
           options: Options(method: 'GET')
       );
-      print(response.data);
       return ResultModel.fromJson(response.data);
     } on DioError catch (e) {
       print("error: ");
@@ -52,6 +48,49 @@ class RestaurantService {
       return ResultModel.fromJson(json.decode(data));
     } on DioError catch (e) {
       print("error: ");
+      throw (e.message);
+    }
+  }
+
+  Future<ResultModel> orderFood(Map<String, dynamic> data) async {
+    try {
+      Response response = await client.dio.request(
+          API_URL + '/reservation/order',
+          data: data,
+          options: Options(method: 'POST')
+      );
+      print(response.data);
+      return ResultModel.fromJson(response.data);
+    } on DioError catch (e) {
+      print("errors: ");
+      throw (e.message);
+    }
+  }
+
+  Future<ResultModel> reOrderFood(Map<String, dynamic> data, String tableId) async {
+    try {
+      Response response = await client.dio.request(
+          API_URL + '/reservation/order/${tableId.toString()}',
+          data: data,
+          options: Options(method: 'PUT')
+      );
+      print(response.data);
+      return ResultModel.fromJson(response.data);
+    } on DioError catch (e) {
+      print("errors: ");
+      throw (e.message);
+    }
+  }
+
+  Future<ResultModel> getOrderByTable(String tableId) async {
+    try {
+      Response response = await client.dio.request(
+          API_URL + '/reservation/order-by-table?table_id=${tableId.toString()}',
+          options: Options(method: 'GET')
+      );
+      return ResultModel.fromJson(response.data);
+    } on DioError catch (e) {
+      print("errors: ");
       throw (e.message);
     }
   }

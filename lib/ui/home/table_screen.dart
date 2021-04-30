@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pos_ios_bvhn/components/drawer.dart';
 import 'package:pos_ios_bvhn/model/results_model.dart';
 import 'package:pos_ios_bvhn/model/table/position_table_model.dart';
@@ -36,7 +37,14 @@ class _TableScreenState extends State<TableScreen> {
   void initState() {
     // TODO: implement initState
     super.initState();
+
+    // init data
     initData();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   Future initData() async {
@@ -198,7 +206,7 @@ class _TableScreenState extends State<TableScreen> {
                                     color: tables[index].using ?  PrimaryOrangeColor : PrimaryGreenColor,
                                     borderRadius: BorderRadius.circular(20.0),
                                     border: Border.all(
-                                        color: PrimaryGreenColor,
+                                        color: tables[index].using ? Color(0xFF848a93) : PrimaryGreenColor,
                                         width: 2.0
                                     )
                                 ),
@@ -206,7 +214,7 @@ class _TableScreenState extends State<TableScreen> {
                                   onPressed: () {
                                     // TODO: If in table, there are orders, It will navigator to Screen State Order
                                     Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => HomeScreen(table: tables[index],))
+                                        MaterialPageRoute(builder: (context) => HomeScreen(table: tables[index]))
                                     );
                                   },
                                   child: Container(

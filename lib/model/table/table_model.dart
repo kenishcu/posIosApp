@@ -15,6 +15,17 @@ class TableModel {
         json['using'] as bool, json['status'] as int, PositionTableModel.fromJson(json['position']));
   }
 
+  toJson() {
+    return {
+      '_id': _id,
+      'table_name': _tableName,
+      'table_code': _tableCode,
+      'using': _using,
+      'status': _status,
+      'position': _position.toJson()
+    };
+  }
+
   String get id => _id;
 
   set id(String value) {

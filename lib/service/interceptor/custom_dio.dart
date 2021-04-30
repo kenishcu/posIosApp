@@ -24,7 +24,7 @@ class CustomDio {
    dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (RequestOptions options, RequestInterceptorHandler handler) async {
-          print('REQUEST[${options.method}] => PATH: ${options.path}');
+          // print('REQUEST[${options.method}] => PATH: ${options.path}');
            SharedPreferences prefs = await SharedPreferences.getInstance();
            String token = prefs.getString('token');
            if(token != null && options != null) {
@@ -33,7 +33,7 @@ class CustomDio {
           return handler.next(options);
         },
         onResponse: (Response response, ResponseInterceptorHandler handler) async {
-          print('RESPONSE[${response.statusCode}] => PATH: ${response.requestOptions?.path}');
+          // print('RESPONSE[${response.statusCode}] => PATH: ${response.requestOptions?.path}');
           if (response.statusCode == 200 && response.data != null && response.data['token'] != null) {
             SharedPreferences prefs = await SharedPreferences.getInstance();
             prefs.setString('token', response.data['token']);

@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pos_ios_bvhn/provider/setting_provider.dart';
 import 'package:pos_ios_bvhn/sqflite/model/user_model_sqflite.dart';
 import 'package:pos_ios_bvhn/sqflite/user_sqflite.dart';
@@ -37,7 +38,14 @@ class _AppState extends State<App> {
   @override
   Widget build(BuildContext context) {
     // TODO: implement build
+
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: Consumer<SettingProvider>(
         builder: (context, setting, child) => MaterialApp(
           theme: ThemeData(

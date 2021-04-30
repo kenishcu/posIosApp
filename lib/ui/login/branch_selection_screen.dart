@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pos_ios_bvhn/components/drawer.dart';
 import 'package:pos_ios_bvhn/model/restaurant/branch_restaurant_model.dart';
 import 'package:pos_ios_bvhn/model/results_model.dart';
@@ -44,6 +45,11 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen> {
   }
 
   @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
 
     Size size = MediaQuery.of(context).size;
@@ -54,10 +60,9 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen> {
       appBar: AppBar(
         iconTheme: IconThemeData(color: Color(0xFF848a93),),
         backgroundColor: Color(0xFFf4f5f7),
-        leading: new Container(
-          width: 5,
-        ),
         title: Container(
+          decoration: BoxDecoration(
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -65,18 +70,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen> {
                   height: 45,
                   width: 120,
                   margin: EdgeInsets.only(left: 0),
-                  decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10.0),
-                      color: Colors.white
-                  ),
-                  child: TextButton(
-                    onPressed: () {
 
-                    },
-                    child: Text(" Đăng nhập lại", style: TextStyle(
-                      color: Colors.grey
-                    )),
-                  )
               ),
               Container(
                 height: 45,
@@ -95,7 +89,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen> {
                     ),
                     Padding(
                       padding: EdgeInsets.only(left: 20, top: 5),
-                      child: Text("Restaurant open", style: TextStyle(
+                      child: Text("Chi nhánh sẵn sàng", style: TextStyle(
                         color: Colors.grey
                       )),
                     )
@@ -106,7 +100,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen> {
           ),
         ),
       ),
-      // drawer: DrawerCustom(),
+      drawer: DrawerCustom(),
       body: SingleChildScrollView(
         child: Column(
           children: [

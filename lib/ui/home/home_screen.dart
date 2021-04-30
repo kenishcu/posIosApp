@@ -1,14 +1,21 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:pos_ios_bvhn/components/drawer.dart';
 import 'package:pos_ios_bvhn/model/restaurant/category_meal_restaurant_model.dart';
 import 'package:pos_ios_bvhn/model/restaurant/category_restaurant_model.dart';
+import 'package:pos_ios_bvhn/model/restaurant/commission_restaurant_model.dart';
+import 'package:pos_ios_bvhn/model/restaurant/order_restaurant_model.dart';
+import 'package:pos_ios_bvhn/model/restaurant/product_order_model.dart';
 import 'package:pos_ios_bvhn/model/restaurant/product_restaurant_model.dart';
 import 'package:pos_ios_bvhn/model/results_model.dart';
 import 'package:pos_ios_bvhn/model/table/table_model.dart';
 import 'package:pos_ios_bvhn/model/user/user_model.dart';
 import 'package:pos_ios_bvhn/provider/setting_provider.dart';
 import 'package:pos_ios_bvhn/service/restaurant_service.dart';
+import 'package:pos_ios_bvhn/ui/home/table_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:money2/money2.dart';
 
@@ -24,9 +31,11 @@ class HomeScreen extends StatefulWidget {
   _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin{
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin, TickerProviderStateMixin{
 
   bool _loading = false;
+
+  bool _isLoading = false;
 
   bool selected = false;
 
@@ -57,8 +66,33 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   RestaurantService restaurantService = new RestaurantService();
 
+  TextEditingController emailController =  new TextEditingController();
+
+  TextEditingController discountController =  new TextEditingController();
+
+  TextEditingController priceController =  new TextEditingController();
+
+  TextEditingController noteController =  new TextEditingController();
+
+  // editing for tax and service fee
+  TextEditingController taxController =  new TextEditingController();
+
+  TextEditingController feeServiceController =  new TextEditingController();
+
+  // editing for commission
+  TextEditingController receiveController = new TextEditingController();
+
+  TextEditingController customerController = new TextEditingController();
+
+  TextEditingController commissionController = new TextEditingController();
+
+  TextEditingController noteCommissionController = new TextEditingController();
+
+  TextStyle style = TextStyle(fontFamily: 'Montserrat', fontSize: 20.0, color: Colors.black26);
 
   final vnd = Currency.create('VND', 0, symbol: '₫');
+
+  CommissionRestaurantModel _commission;
 
   // list categories restaurant
   List<CategoryRestaurantModel> categories = [
@@ -71,6 +105,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   List<Widget> listWidget = [
   ];
 
+  FToast fToast;
+
+  final _formKey = GlobalKey<FormState>();
+
+  OrderRestaurantModel _order;
+
   @override
   void initState() {
 
@@ -81,14 +121,26 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _scrollController = ScrollController();
     _scrollController.addListener(_scrollListener);
 
+
+    fToast = FToast();
+    fToast.init(context);
+
     super.initState();
     initDataRestaurant();
+    initTableData();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     _scrollController.dispose();
+    commissionController.dispose();
+    receiveController.dispose();
+    customerController.dispose();
+    noteCommissionController.dispose();
+    discountController.dispose();
+    taxController.dispose();
+    feeServiceController.dispose();
     super.dispose();
   }
 
@@ -326,9 +378,714 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         listTabsCategories.add([]);
       }
     });
-    setState(() {
-      _loading = false;
+    var future = new Future.delayed(const Duration(milliseconds: 1000), () {
+      setState(() {
+        _loading = false;
+      });
     });
+  }
+
+  Future initTableData() async {
+
+    String tableId = widget.table.id;
+
+    ResultModel res = await restaurantService.getOrderByTable(tableId);
+
+    if(res.status) {
+      setState(() {
+        this._order = OrderRestaurantModel.fromJson(res.data[0]);
+        _commission = this._order.commissionRestaurantModel;
+
+        // set _items to list payments
+        if (this._order.products != null && this._order.products.length > 0) {
+          for(int i = 0; i < this._order.products.length; i++) {
+
+            final item = new ItemProduct( this._order.products[i].id, this._order.products[i], this._order.products[i].quantity);
+            setState(() {
+              _items = []
+                ..add(item)
+                ..addAll(_items);
+            });
+          }
+        }
+      });
+    } else {
+      UserModel user = Provider.of<SettingProvider>(context, listen: false).userInfo;
+      DateTime now = DateTime.now();
+      int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
+      setState(() {
+        _commission = new CommissionRestaurantModel("", "", "", 0);
+        _order = new OrderRestaurantModel(user.branchId, user.branchName, user.branchCode,
+            _commission, 0, 0, 0,
+            "CASH", [], null, 0,
+            0, "CHECKIN", widget.table, 0, 0, timeOrder);
+      });
+    }
+  }
+
+  Future<void> _showDialogEdit (ItemProduct item) async {
+
+    Size size = MediaQuery.of(context).size;
+
+    final amountField = Container(
+        height: 70,
+        margin: EdgeInsets.only(top: 10),
+        decoration: BoxDecoration(
+            border: Border.all(),
+            borderRadius: BorderRadius.circular(10.0)
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Container(
+              height: 25,
+              child: Padding(
+                padding: EdgeInsets.only(left: 10, top: 5),
+                child: Text("Số lượng", style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.blue
+                )),
+              ),
+            ),
+            Container(
+              height: 30,
+              child: TextFormField(
+                obscureText: false,
+                controller: emailController,
+                style: style,
+                decoration: InputDecoration(
+                    hintText: "Điền sl...",
+                    contentPadding: EdgeInsets.only(left: 10),
+                    fillColor: PrimaryBlackColor,
+                    hintStyle: TextStyle(
+                        fontSize: 16,
+                        color: PrimaryGreyColor
+                    ),
+                    border: InputBorder.none
+                ),
+              ),
+            )
+          ],
+        )
+    );
+
+    final discountField = Container(
+        height: 70,
+        margin: EdgeInsets.only(top: 10),
+        decoration: BoxDecoration(
+            border: Border.all(),
+            borderRadius: BorderRadius.circular(10.0)
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Container(
+              height: 25,
+              child: Padding(
+                padding: EdgeInsets.only(left: 10, top: 5),
+                child: Text("Giảm giá/SP", style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.blue
+                )),
+              ),
+            ),
+            Container(
+              height: 30,
+              child: TextFormField(
+                obscureText: false,
+                controller: discountController,
+                style: style,
+                decoration: InputDecoration(
+                    hintText: "...",
+                    contentPadding: EdgeInsets.only(left: 10),
+                    fillColor: PrimaryBlackColor,
+                    hintStyle: TextStyle(
+                        fontSize: 16,
+                        color: PrimaryGreyColor
+                    ),
+                    border: InputBorder.none
+                ),
+              ),
+            )
+          ],
+        )
+    );
+
+    final priceField = Container(
+        height: 70,
+        margin: EdgeInsets.only(top: 10),
+        decoration: BoxDecoration(
+            border: Border.all(),
+            borderRadius: BorderRadius.circular(10.0)
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Container(
+              height: 25,
+              child: Padding(
+                padding: EdgeInsets.only(left: 10, top: 5),
+                child: Text("Giá tiền", style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.blue
+                )),
+              ),
+            ),
+            Container(
+              height: 30,
+              child: TextFormField(
+                obscureText: false,
+                controller: priceController,
+                style: style,
+                decoration: InputDecoration(
+                    hintText: "...",
+                    contentPadding: EdgeInsets.only(left: 10),
+                    fillColor: PrimaryBlackColor,
+                    hintStyle: TextStyle(
+                        fontSize: 16,
+                        color: PrimaryGreyColor
+                    ),
+                    border: InputBorder.none
+                ),
+              ),
+            )
+          ],
+        )
+    );
+
+    final noteField = Container(
+        height: 70,
+        margin: EdgeInsets.only(top: 10),
+        decoration: BoxDecoration(
+            border: Border.all(),
+            borderRadius: BorderRadius.circular(10.0)
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Container(
+              height: 25,
+              child: Padding(
+                padding: EdgeInsets.only(left: 10, top: 5),
+                child: Text("Ghi chú", style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.blue
+                )),
+              ),
+            ),
+            Container(
+              height: 30,
+              child: TextFormField(
+                obscureText: false,
+                controller: noteController,
+                style: style,
+                decoration: InputDecoration(
+                    hintText: "...",
+                    contentPadding: EdgeInsets.only(left: 10),
+                    fillColor: PrimaryBlackColor,
+                    hintStyle: TextStyle(
+                        fontSize: 16,
+                        color: PrimaryGreyColor
+                    ),
+                    border: InputBorder.none
+                ),
+              ),
+            )
+          ],
+        )
+    );
+
+    final updateButton = Container(
+      margin: EdgeInsets.only(top: 10, left: 680),
+      height: 50,
+      width: 120,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(5.0),
+        color: PrimaryGreenLightColor
+      ),
+      child: TextButton(
+        onPressed: () async {
+        },
+        child: Text("Cập nhật",
+            textAlign: TextAlign.center,
+            style: style.copyWith(
+                fontSize: 14,
+                color: Colors.white, fontWeight: FontWeight.bold)),
+      ),
+    );
+
+    return showDialog<void>(
+        context: context,
+        barrierDismissible: true,
+        builder: (BuildContext context) {
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: EdgeInsets.all(10.0),
+            child: Container(
+              height: size.height * 0.6,
+              width: size.width * 0.8,
+              padding: EdgeInsets.only(top: 20 , left: 20, right: 20),
+              decoration: BoxDecoration(
+                color: Colors.white
+              ),
+              child: Container(
+                child: SingleChildScrollView(
+                  child: Center(
+                    child: Container(
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Container(
+                              height: 50,
+                              child: Text("Ghi chú sản phẩm", style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold
+                              )),
+                            ),
+                            amountField,
+                            discountField,
+                            priceField,
+                            noteField,
+                            updateButton
+                          ],
+                        ),
+                      ),
+                    )
+                  ),
+                )
+              ),
+            ),
+          );
+        });
+  }
+
+  Future<void> _showDialogEditTax() async {
+
+    setState(() {
+      taxController.text = _order.taxRate.toString();
+      feeServiceController.text = _order.serviceCharge.toString();
+    });
+
+    Size size = MediaQuery.of(context).size;
+
+    final taxField = Container(
+        height: 70,
+        margin: EdgeInsets.only(top: 10),
+        decoration: BoxDecoration(
+            border: Border.all(),
+            borderRadius: BorderRadius.circular(10.0)
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Container(
+              height: 25,
+              child: Padding(
+                padding: EdgeInsets.only(left: 10, top: 5),
+                child: Text("Thuế (%)", style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.blue
+                )),
+              ),
+            ),
+            Container(
+              height: 30,
+              child: TextFormField(
+                obscureText: false,
+                controller: taxController,
+                style: style,
+                decoration: InputDecoration(
+                    hintText: "0%",
+                    contentPadding: EdgeInsets.only(left: 10),
+                    fillColor: PrimaryBlackColor,
+                    hintStyle: TextStyle(
+                        fontSize: 16,
+                        color: PrimaryGreyColor
+                    ),
+                    border: InputBorder.none
+                ),
+              ),
+            )
+          ],
+        )
+    );
+
+    final serviceField = Container(
+        height: 70,
+        margin: EdgeInsets.only(top: 10),
+        decoration: BoxDecoration(
+            border: Border.all(),
+            borderRadius: BorderRadius.circular(10.0)
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Container(
+              height: 25,
+              child: Padding(
+                padding: EdgeInsets.only(left: 10, top: 5),
+                child: Text("Phí dịch vụ (Số)", style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.blue
+                )),
+              ),
+            ),
+            Container(
+              height: 30,
+              child: TextFormField(
+                obscureText: false,
+                controller: feeServiceController,
+                style: style,
+                decoration: InputDecoration(
+                    hintText: "...",
+                    contentPadding: EdgeInsets.only(left: 10),
+                    fillColor: PrimaryBlackColor,
+                    hintStyle: TextStyle(
+                        fontSize: 16,
+                        color: PrimaryGreyColor
+                    ),
+                    border: InputBorder.none
+                ),
+              ),
+            )
+          ],
+        )
+    );
+
+    return showDialog<void>(
+        context: context,
+        barrierDismissible: true,
+        builder: (BuildContext context) {
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: EdgeInsets.all(10.0),
+            child: Container(
+              height: size.height * 0.4,
+              width: size.width * 0.8,
+              padding: EdgeInsets.only(top: 20 , left: 20, right: 20),
+              decoration: BoxDecoration(
+                  color: Colors.white
+              ),
+              child: Container(
+                  child: SingleChildScrollView(
+                    child: Center(
+                        child: Container(
+                          child: Form(
+                            key: _formKey,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Container(
+                                  height: 50,
+                                  child: Text("Cập nhật thuế dịch vụ", style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold
+                                  )),
+                                ),
+                                taxField,
+                                serviceField,
+                                Container(
+                                  margin: EdgeInsets.only(top: 10, left: 680),
+                                  height: 50,
+                                  width: 120,
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(5.0),
+                                      color: PrimaryGreenLightColor
+                                  ),
+                                  child: TextButton(
+                                    onPressed: () async {
+                                      setState(() {
+                                        int f = feeServiceController != null && feeServiceController.text != "" ? int.parse(feeServiceController.text) : 0;
+                                        int t = taxController != null && taxController.text != "" ? int.parse(taxController.text) : 0;
+                                        _order.serviceCharge = f;
+                                        _order.taxRate = t;
+                                      });
+                                      Navigator.pop(context);
+                                    },
+                                    child: Text("Cập nhật",
+                                        textAlign: TextAlign.center,
+                                        style: style.copyWith(
+                                            fontSize: 14,
+                                            color: Colors.white, fontWeight: FontWeight.bold)),
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                        )
+                    ),
+                  )
+              ),
+            ),
+          );
+        });
+  }
+
+  Future<void> _showCommission() async {
+
+    setState(() {
+      receiveController.text = _commission.receiveName;
+      customerController.text = _commission.customerName;
+      commissionController.text = _commission.rosesPercent.toString();
+      noteCommissionController.text = _commission.rosesNote;
+    });
+
+    Size size = MediaQuery.of(context).size;
+
+    final receiveField = Container(
+        height: 70,
+        margin: EdgeInsets.only(top: 10),
+        decoration: BoxDecoration(
+            border: Border.all(),
+            borderRadius: BorderRadius.circular(10.0)
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Container(
+              height: 25,
+              child: Padding(
+                padding: EdgeInsets.only(left: 10, top: 5),
+                child: Text("Người nhận", style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.blue
+                )),
+              ),
+            ),
+            Container(
+              height: 30,
+              child: TextFormField(
+                obscureText: false,
+                controller: receiveController,
+                style: style,
+                decoration: InputDecoration(
+                    hintText: "",
+                    contentPadding: EdgeInsets.only(left: 10),
+                    fillColor: PrimaryBlackColor,
+                    hintStyle: TextStyle(
+                        fontSize: 16,
+                        color: PrimaryGreyColor
+                    ),
+                    border: InputBorder.none
+                ),
+              ),
+            )
+          ],
+        )
+    );
+
+    final customerField = Container(
+        height: 70,
+        margin: EdgeInsets.only(top: 10),
+        decoration: BoxDecoration(
+            border: Border.all(),
+            borderRadius: BorderRadius.circular(10.0)
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Container(
+              height: 25,
+              child: Padding(
+                padding: EdgeInsets.only(left: 10, top: 5),
+                child: Text("Khách hàng", style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.blue
+                )),
+              ),
+            ),
+            Container(
+              height: 30,
+              child: TextFormField(
+                obscureText: false,
+                controller: customerController,
+                style: style,
+                decoration: InputDecoration(
+                    hintText: "",
+                    contentPadding: EdgeInsets.only(left: 10),
+                    fillColor: PrimaryBlackColor,
+                    hintStyle: TextStyle(
+                        fontSize: 16,
+                        color: PrimaryGreyColor
+                    ),
+                    border: InputBorder.none
+                ),
+              ),
+            )
+          ],
+        )
+    );
+
+    final commissionField = Container(
+        height: 70,
+        margin: EdgeInsets.only(top: 10),
+        decoration: BoxDecoration(
+            border: Border.all(),
+            borderRadius: BorderRadius.circular(10.0)
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Container(
+              height: 25,
+              child: Padding(
+                padding: EdgeInsets.only(left: 10, top: 5),
+                child: Text("Chi % ( đơn vị %)", style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.blue
+                )),
+              ),
+            ),
+            Container(
+              height: 30,
+              child: TextFormField(
+                obscureText: false,
+                controller: commissionController,
+                style: style,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                    hintText: "0%",
+                    contentPadding: EdgeInsets.only(left: 10),
+                    fillColor: PrimaryBlackColor,
+                    hintStyle: TextStyle(
+                        fontSize: 16,
+                        color: PrimaryGreyColor
+                    ),
+                    border: InputBorder.none
+                ),
+              ),
+            )
+          ],
+        )
+    );
+
+    final noteField = Container(
+        height: 70,
+        margin: EdgeInsets.only(top: 10),
+        decoration: BoxDecoration(
+            border: Border.all(),
+            borderRadius: BorderRadius.circular(10.0)
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Container(
+              height: 25,
+              child: Padding(
+                padding: EdgeInsets.only(left: 10, top: 5),
+                child: Text("Ghi chú chi % cho ai", style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.blue
+                )),
+              ),
+            ),
+            Container(
+              height: 30,
+              child: TextFormField(
+                obscureText: false,
+                controller: noteCommissionController,
+                style: style,
+                decoration: InputDecoration(
+                    hintText: "",
+                    contentPadding: EdgeInsets.only(left: 10),
+                    fillColor: PrimaryBlackColor,
+                    hintStyle: TextStyle(
+                        fontSize: 16,
+                        color: PrimaryGreyColor
+                    ),
+                    border: InputBorder.none
+                ),
+              ),
+            )
+          ],
+        )
+    );
+
+    return showDialog<void>(
+        context: context,
+        barrierDismissible: true,
+        builder: (BuildContext context) {
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: EdgeInsets.all(10.0),
+            child: Container(
+              height: size.height * 0.6,
+              width: size.width * 0.8,
+              padding: EdgeInsets.only(top: 20 , left: 20, right: 20),
+              decoration: BoxDecoration(
+                  color: Colors.white
+              ),
+              child: Container(
+                  child: SingleChildScrollView(
+                    child: Center(
+                        child: Container(
+                          child: Form(
+                            key: _formKey,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Container(
+                                  height: 50,
+                                  child: Text("Cập nhật khách hàng, hoa hồng", style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold
+                                  )),
+                                ),
+                                receiveField,
+                                customerField,
+                                commissionField,
+                                noteField,
+                                Container(
+                                  margin: EdgeInsets.only(top: 10, left: 680),
+                                  height: 50,
+                                  width: 120,
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(5.0),
+                                      color: PrimaryGreenLightColor
+                                  ),
+                                  child: TextButton(
+                                    onPressed: () async {
+                                      setState(() {
+                                        _commission.receiveName = receiveController.text;
+                                        _commission.customerName = customerController.text;
+                                        int c = commissionController != null && commissionController.text != "" ? int.parse(commissionController.text) : 0;
+                                        _commission.rosesPercent = c;
+                                        _commission.rosesNote = noteCommissionController.text;
+                                      });
+                                      Navigator.pop(context);
+                                    },
+                                    child: Text("Cập nhật",
+                                        textAlign: TextAlign.center,
+                                        style: style.copyWith(
+                                            fontSize: 14,
+                                            color: Colors.white, fontWeight: FontWeight.bold)),
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                        )
+                    ),
+                  )
+              ),
+            ),
+          );
+        });
   }
 
   _scrollListener() {
@@ -547,7 +1304,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                         onPressed: () {
                                           setState(() {
                                             int cnt;
-                                            if( _items !=null && _items.length > 0) {
+                                            ProductOrderModel productOrder = new ProductOrderModel(listTabsView[i][index].id,
+                                                listTabsView[i][index].productCode, listTabsView[i][index].productName,
+                                                listTabsView[i][index].categoryParentId, listTabsView[i][index].categoryParentCode,
+                                                listTabsView[i][index].categoryParentName, listTabsView[i][index].categoryId,
+                                                listTabsView[i][index].categoryCode, listTabsView[i][index].categoryName,
+                                                "CHECKIN",  listTabsView[i][index].price,  listTabsView[i][index].imageUrl,
+                                                listTabsView[i][index].combo,  listTabsView[i][index].categoryStatus,
+                                                listTabsView[i][index].supplies,  listTabsView[i][index].unitCode,
+                                                listTabsView[i][index].unitId, listTabsView[i][index].unitName,
+                                                listTabsView[i][index].unitStatus, 0 , '', 0, 0, false, "", 1);
+                                            if( _items != null && _items.length > 0) {
                                               for(int j = 0; j< _items.length; j++) {
                                                 if(listTabsView[i][index].id.toString() == _items[j].id.toString()) {
                                                   cnt = j;
@@ -557,7 +1324,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                                 listKey.currentState.insertItem(0,
                                                     duration: const Duration(
                                                         milliseconds: 500));
-                                                final item = new ItemProduct(listTabsView[i][index].id.toString() ,listTabsView[i][index], 1);
+                                                final item = new ItemProduct(listTabsView[i][index].id.toString() , productOrder, 1);
                                                 _items = []
                                                   ..add(item)
                                                   ..addAll(_items);
@@ -569,7 +1336,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                               listKey.currentState.insertItem(0,
                                                   duration: const Duration(
                                                       milliseconds: 500));
-                                              final item = new ItemProduct(listTabsView[i][index].id.toString(), listTabsView[i][index], 1);
+                                              final item = new ItemProduct(listTabsView[i][index].id.toString(), productOrder, 1);
                                               _items = []
                                                 ..add(item)
                                                 ..addAll(_items);
@@ -647,21 +1414,81 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget _buildItem(BuildContext context, int index, animation) {
     ItemProduct item = _items[index];
     Size size = MediaQuery.of(context).size;
-    return SlideTransition(
-      position: Tween<Offset>(
-          begin: Offset(0.0, 1.0),
-          end: Offset(0.0, 0.0)
-      ).animate(animation),
-      child: Container(
-        margin: EdgeInsets.only(bottom: 5),
+    return Container(
+      child: SlideTransition(
+        position: Tween<Offset>(
+            begin: Offset(0.0, 0.0),
+            end: Offset(0.0, 0.0)
+        ).animate(animation),
         child: Container(
-          width: size.width * 0.3,
-          decoration: BoxDecoration(
-          ),
-          child: Row(
-            children: [
+          margin: EdgeInsets.only(bottom: 5),
+          child: Slidable(
+            actionPane: SlidableScrollActionPane(),
+            actionExtentRatio: 0.3,
+            actions: <Widget>[
+              IconSlideAction(
+                caption: 'Delete',
+                color: Colors.red,
+                icon: Icons.delete,
+                onTap: () {
+                  setState(() {
+                    if(_items.length == 1) {
+                      listKey.currentState.removeItem( 0,
+                              (BuildContext context, animation) {
+                            return Container();
+                          });
+                      _items.removeAt(0);
+                      return;
+                    } else {
+                      listKey.currentState.removeItem(index,
+                              (context, animation) => _buildItem(context, 0, animation),
+                          duration: const Duration(milliseconds: 300));
+                      _items.removeAt(index);
+                    }
+                  });
+                },
+              ),
               Container(
-                width: size.width * 0.26,
+                  width: 70,
+                  height: 70,
+                  decoration: BoxDecoration(
+                      color: PrimaryGreenColor
+                  ),
+                  child: TextButton(
+                    onPressed: () {
+                      _showDialogEdit(item);
+                    },
+                    style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        alignment: Alignment.center),
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          left: 0,
+                          top: 0,
+                          child: Icon(
+                            Icons.edit,
+                            size: 25,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.only(top: 25, right: 15),
+                          child: Text("Edit", style: TextStyle(
+                              color: Colors.white
+                          )),
+                        )
+                      ],
+                    ),
+                  )
+              ),
+            ],
+            child: Container(
+              width: size.width * 0.3,
+              decoration: BoxDecoration(
+              ),
+              child:  Container(
+                width: size.width * 0.3,
                 decoration: BoxDecoration(
                   color: kPrimaryLightColor,
                 ),
@@ -687,14 +1514,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     ),
                     Container(
                       height: 40,
-                      width: size.width * 0.26,
+                      width: size.width * 0.3,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.start,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Container(
                               height: 40,
-                              width: size.width * 0.13,
+                              width: size.width * 0.15,
                               padding: EdgeInsets.only(left: 4),
                               child: Align(
                                 alignment: Alignment.centerLeft,
@@ -790,42 +1617,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ],
                 ),
               ),
-              Container(
-                margin: EdgeInsets.only(left: size.width * 0.01),
-                width: size.width * 0.05,
-                height: 70,
-                decoration: BoxDecoration(
-                  color: PrimaryGreenLightColor
-                ),
-                child: TextButton(
-                  onPressed: () {
-                    setState(() {
-                      if(_items.length == 1) {
-                        listKey.currentState.removeItem( 0,
-                                (BuildContext context, animation) {
-                                  return Container();
-                                });
-                        _items.removeAt(0);
-                        return;
-                      } else {
-                        listKey.currentState.removeItem(index,
-                                (context, animation) => _buildItem(context, 0, animation),
-                                duration: const Duration(milliseconds: 300));
-                        _items.removeAt(index);
-                      }
-                    });
-                  },
-                  style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      alignment: Alignment.center),
-                  child: Icon(
-                    Icons.delete,
-                    size: 30,
-                    color: Colors.white,
-                  ),
-                ),
-              )
-            ],
+            ),
           ),
         ),
       ),
@@ -885,6 +1677,62 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     });
   }
 
+  _showToast() {
+    Widget toast = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(25.0),
+        color: Colors.blue,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.check),
+          SizedBox(
+            width: 12.0,
+          ),
+          Text("Đặt đồ thành công.", style: TextStyle(
+            color: Colors.white
+          )),
+        ],
+      ),
+    );
+
+
+    fToast.showToast(
+      child: toast,
+      gravity: ToastGravity.BOTTOM_RIGHT,
+      toastDuration: Duration(seconds: 2),
+    );
+  }
+
+  _showToastError() {
+    Widget toast = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(25.0),
+        color: Colors.redAccent,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.check),
+          SizedBox(
+            width: 12.0,
+          ),
+          Text("Đặt đồ không thành công."),
+        ],
+      ),
+    );
+
+
+    fToast.showToast(
+      child: toast,
+      gravity: ToastGravity.BOTTOM_RIGHT,
+      toastDuration: Duration(seconds: 2),
+    );
+  }
+
   Widget loading() {
     return Container(
       child: Center(
@@ -893,6 +1741,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
+  Widget loadingOrder() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.transparent
+      ),
+      child: Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
   @override
   Widget build(BuildContext context) {
 
@@ -913,23 +1771,60 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         backgroundColor: Color(0xFFf4f5f7),
         title: Container(
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                child: Icon(
-                  Icons.fastfood,
-                  color: Color(0xFF848a93),
+                child: Row(
+                  children: [
+                    Container(
+                      child: Icon(
+                        Icons.fastfood,
+                        color: Color(0xFF848a93),
+                      ),
+                    ),
+                    Container(
+                      margin: EdgeInsets.only(left: 10, right: 40),
+                      child: Text("Đặt món", style: TextStyle(
+                        color: Color(0xFF848a93)),
+                      ),
+                    )
+                  ],
                 ),
               ),
               Container(
-                margin: EdgeInsets.only(left: 10),
-                child: Text("Đặt món", style: TextStyle( color: Color(0xFF848a93),)),
-              )
+                height: 40,
+                width: 170,
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Color(0xFF848a93),
+                    width: 4.0
+                  )
+                ),
+                child: TextButton(
+                  onPressed: () {
+                    //TODO: go to table screen
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (context) => TableScreen())
+                    );
+                  },
+                  child: Container(
+                    child: Text(
+                        "Danh sách bàn",
+                        style: TextStyle(
+                            color: Color(0xFF848a93),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15
+                        )
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
       ),
       drawer: DrawerCustom(),
-      body: _loading ? loading() : SingleChildScrollView(
+      body: _isLoading ? loadingOrder() : SingleChildScrollView(
         child: Container(
           height: size.height - 50,
           child: Row(
@@ -1013,14 +1908,25 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               margin: EdgeInsets.only(left: 10),
                               child: Text("${widget.table.tableName}", style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 20
+                                fontSize: 20,
                               )),
+                            ),
+                            Container(
+                              margin: EdgeInsets.only(
+                                left: 50
+                              ),
+                              child: Text(
+                                this._order != null && this._order.reservationId != null ? "Bill: ${this._order.reservationId}" : "",
+                                style: TextStyle(
+                                  fontSize: 20
+                                ),
+                              ),
                             )
                           ],
                         ),
                       ),
                       Container(
-                        height: size.height - 310,
+                        height: size.height - 360,
                         decoration: BoxDecoration(
                         ),
                         child: Scrollbar(
@@ -1035,6 +1941,84 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             ),
                           ),
                         )
+                      ),
+                      Container(
+                        height: 50,
+                        child: Row(
+                          children: [
+                            Container(
+                              margin: EdgeInsets.only(top: 10, left: 5),
+                              height: 50,
+                              width: 180,
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(5.0),
+                                  color: PrimaryGreenLightColor
+                              ),
+                              child: TextButton(
+                                onPressed: () async {
+                                  _showDialogEditTax();
+                                },
+                                child: Stack(
+                                  children: [
+                                    SvgPicture.asset(
+                                        "assets/img/edit.svg",
+                                        color: Colors.white,
+                                        width: 20,
+                                        height: 20,
+                                        allowDrawingOutsideViewBox: true,
+                                        semanticsLabel: 'Edit Tax'
+                                    ),
+                                    Padding(
+                                        padding: EdgeInsets.only(
+                                          left: 30,
+                                        ),
+                                        child: Text(
+                                          "Phí dịch vụ, thuế", style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16
+                                        ),
+                                        )
+                                    )
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Container(
+                              width: 130,
+                              height: 40,
+                              margin: EdgeInsets.only(top: 10, left: 15),
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(5.0),
+                                  color: PrimaryGreenLightColor
+                              ),
+                              child: TextButton(
+                                onPressed: () {
+                                  _showCommission();
+                                },
+                                child: Stack(
+                                  children: [
+                                    Positioned(
+                                      top: 0,
+                                      child: Icon(
+                                        Icons.attach_money,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: EdgeInsets.only(left: 20, top: 0),
+                                      child: Text("Hoa hồng",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.white
+                                      )),
+                                    )
+                                  ],
+                                ),
+                              ),
+                            )
+                          ],
+                        ),
                       ),
                       Container(
                         height: 30,
@@ -1066,7 +2050,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               _items.clear();
                             });
                           },
-                          child: Text("HỦY ĐẶT", style: TextStyle(
+                          child: Text("XOÁ TẤT CẢ", style: TextStyle(
                             color: Colors.white
                           )),
                         ),
@@ -1080,7 +2064,59 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             color: PrimaryGreenColor
                         ),
                         child: TextButton(
-                          onPressed: () {  },
+                          onPressed: () async {
+                            List<Map<String, dynamic>> list = [];
+                            _items.forEach((element) {
+                              ProductOrderModel pro = new ProductOrderModel(element.product.id, element.product.productCode,
+                                  element.product.productName, element.product.categoryParentId, element.product.categoryParentCode,
+                                  element.product.categoryParentName, element.product.categoryId, element.product.categoryCode,
+                                  element.product.categoryName, "CHECKIN", element.product.price, element.product.imageUrl,
+                                  element.product.combo, element.product.categoryStatus, element.product.supplies, element.product.unitCode,
+                                  element.product.unitId, element.product.unitName, element.product.unitStatus, 0,
+                                  "", 0, 0,
+                                  false, "", element.number);
+                              list.add(pro.toJson());
+                            });
+
+                            UserModel user = Provider.of<SettingProvider>(context, listen: false).userInfo;
+                            DateTime now = DateTime.now();
+                            int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
+                            Map<String, dynamic> order = {
+                              'branch_code': user.branchCode,
+                              'branch_id': user.branchId,
+                              'branch_name': user.branchName,
+                              'discount': 0,
+                              'discount_rate': 0,
+                              'group_payment': 0,
+                              'payment_result': "CASH",
+                              'products': [],
+                              'service_charge': 0,
+                              'service_change_rate': 0,
+                              'status': 'CHECKIN',
+                              'table': widget.table.toJson(),
+                              'tax': 0,
+                              'tax_rate': 0,
+                              'used_at': timeOrder
+                            };
+
+                            // TODO: Order
+                            setState(() {
+                              _isLoading = true;
+                            });
+                            ResultModel res = await restaurantService.orderFood(order);
+                            if(res.status) {
+                              _showToast();
+                              //TODO: go to table screen
+                              Navigator.push(context,
+                                  MaterialPageRoute(builder: (context) => TableScreen())
+                              );
+                            } else {
+                              _showToastError();
+                            }
+                            setState(() {
+                              _isLoading = false;
+                            });
+                          },
                           child: Text("ĐẶT MÓN", style: TextStyle(
                               color: Colors.white
                           )),
@@ -1101,16 +2137,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
 
 class ItemProduct {
+
   String _id;
+
+  ProductOrderModel _product;
+
+  int _number;
 
   String get id => _id;
 
   set id(String value) {
     _id = value;
   }
-
-  ProductRestaurantModel _product;
-  int _number;
 
   int get number => _number;
 
@@ -1120,9 +2158,9 @@ class ItemProduct {
 
   ItemProduct(this._id, this._product, this._number);
 
-  ProductRestaurantModel get product => _product;
+  ProductOrderModel get product => _product;
 
-  set product(ProductRestaurantModel value) {
+  set product(ProductOrderModel value) {
     _product = value;
   }
 
