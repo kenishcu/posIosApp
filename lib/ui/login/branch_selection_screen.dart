@@ -8,6 +8,8 @@ import 'package:pos_ios_bvhn/model/user/branch_model.dart';
 import 'package:pos_ios_bvhn/model/user/user_model.dart';
 import 'package:pos_ios_bvhn/provider/setting_provider.dart';
 import 'package:pos_ios_bvhn/service/branch_service.dart';
+import 'package:pos_ios_bvhn/sqflite/model/user_model_sqflite.dart';
+import 'package:pos_ios_bvhn/sqflite/user_sqflite.dart';
 import 'package:pos_ios_bvhn/ui/home/table_screen.dart';
 import 'package:provider/provider.dart';
 
@@ -161,7 +163,7 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen> {
                             return Card(
                               child: Container(
                                 child: TextButton(
-                                  onPressed: () {
+                                  onPressed: () async {
                                     //TODO: set config branch
                                     BranchModel newBranch = BranchModel(branches[index].branchId, branches[index].branchName,  branches[index].branchCode,  branches[index].status);
                                     UserModel userInfo = Provider.of<SettingProvider>(context, listen: false).userInfo;
@@ -170,6 +172,19 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen> {
                                     userInfo.branchName = newBranch.branchName;
                                     userInfo.branchId = newBranch.branchId;
                                     Provider.of<SettingProvider>(context, listen: false).setUserInfo(userInfo);
+
+                                    //TODO: up data sqflite
+                                    UserSqfLite userSqfLite = new UserSqfLite();
+                                    int c = await userSqfLite.queryRowCount();
+
+                                    if(c > 0) {
+                                      UserModelSqflite userModelSqflite = await userSqfLite.findById(1);
+                                      userModelSqflite.branchCode = newBranch.branchCode;
+                                      userModelSqflite.branchName = newBranch.branchName;
+                                      userModelSqflite.branchId = newBranch.branchId;
+
+                                      await userSqfLite.update(userModelSqflite);
+                                    }
 
                                     //TODO: go to table screen
                                     Navigator.push(context,

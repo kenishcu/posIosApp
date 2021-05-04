@@ -1,8 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:pos_ios_bvhn/components/custom_grid_view.dart';
 import 'package:pos_ios_bvhn/components/drawer.dart';
 import 'package:pos_ios_bvhn/model/restaurant/category_meal_restaurant_model.dart';
 import 'package:pos_ios_bvhn/model/restaurant/category_restaurant_model.dart';
@@ -66,7 +68,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   RestaurantService restaurantService = new RestaurantService();
 
-  TextEditingController emailController =  new TextEditingController();
+  // editing for product note
+  TextEditingController amountProductController =  new TextEditingController();
 
   TextEditingController discountController =  new TextEditingController();
 
@@ -134,6 +137,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   void dispose() {
     _tabController.dispose();
     _scrollController.dispose();
+
+    noteController.dispose();
+    priceController.dispose();
+    discountController.dispose();
+    priceController.dispose();
+
     commissionController.dispose();
     receiveController.dispose();
     customerController.dispose();
@@ -415,7 +424,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
       setState(() {
         _commission = new CommissionRestaurantModel("", "", "", 0);
-        _order = new OrderRestaurantModel(user.branchId, user.branchName, user.branchCode,
+        _order = new OrderRestaurantModel("", user.branchId, user.branchName, user.branchCode,
             _commission, 0, 0, 0,
             "CASH", [], null, 0,
             0, "CHECKIN", widget.table, 0, 0, timeOrder);
@@ -426,6 +435,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Future<void> _showDialogEdit (ItemProduct item) async {
 
     Size size = MediaQuery.of(context).size;
+
+    setState(() {
+      amountProductController.text = item.number.toString();
+      discountController.text = item.product.discount != null && item.product.discount != 0 ? item.product.discount.toString():
+      item.product.discountRate != null &&  item.product.discountRate != 0 ?  item.product.discountRate.toString() + "%" : "0";
+      priceController.text = item.product.price.toString();
+      noteController.text = item.product.note;
+    });
 
     final amountField = Container(
         height: 70,
@@ -452,7 +469,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               height: 30,
               child: TextFormField(
                 obscureText: false,
-                controller: emailController,
+                controller: amountProductController,
                 style: style,
                 decoration: InputDecoration(
                     hintText: "Điền sl...",
@@ -538,6 +555,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               height: 30,
               child: TextFormField(
                 obscureText: false,
+                enabled: false,
                 controller: priceController,
                 style: style,
                 decoration: InputDecoration(
@@ -599,25 +617,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         )
     );
 
-    final updateButton = Container(
-      margin: EdgeInsets.only(top: 10, left: 680),
-      height: 50,
-      width: 120,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(5.0),
-        color: PrimaryGreenLightColor
-      ),
-      child: TextButton(
-        onPressed: () async {
-        },
-        child: Text("Cập nhật",
-            textAlign: TextAlign.center,
-            style: style.copyWith(
-                fontSize: 14,
-                color: Colors.white, fontWeight: FontWeight.bold)),
-      ),
-    );
-
     return showDialog<void>(
         context: context,
         barrierDismissible: true,
@@ -653,7 +652,44 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             discountField,
                             priceField,
                             noteField,
-                            updateButton
+                            Container(
+                              margin: EdgeInsets.only(top: 10, left: 680),
+                              height: 50,
+                              width: 120,
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(5.0),
+                                  color: PrimaryGreenLightColor
+                              ),
+                              child: TextButton(
+                                onPressed: () async {
+                                  setState(() {
+                                    int index = _items.indexWhere((element) => (element.id == item.id && element.product.status == "CHECKIN"));
+                                    if(index != null) {
+                                      _items[index].product.quantity = int.parse(amountProductController.text);
+
+                                      // Set data for "phi dich vu"
+                                      if(discountController.text.contains('%')) {
+                                        var f = discountController.text.toString();
+                                        f = f.replaceAll('%', '');
+                                        _items[index].product.discountRate = int.parse(f);
+                                        _items[index].product.discount = 0;
+                                      } else {
+                                        _items[index].product.discount = int.parse(discountController.text);
+                                        _items[index].product.discountRate = 0;
+                                      }
+
+                                      _items[index].product.note = noteController.text;
+                                      Navigator.pop(context);
+                                    }
+                                  });
+                                },
+                                child: Text("Cập nhật",
+                                    textAlign: TextAlign.center,
+                                    style: style.copyWith(
+                                        fontSize: 14,
+                                        color: Colors.white, fontWeight: FontWeight.bold)),
+                              ),
+                            )
                           ],
                         ),
                       ),
@@ -669,8 +705,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Future<void> _showDialogEditTax() async {
 
     setState(() {
-      taxController.text = _order.taxRate.toString();
-      feeServiceController.text = _order.serviceCharge.toString();
+      taxController.text = _order.tax != null && _order.tax != 0 ? _order.tax.toString():
+      _order.taxRate != null && _order.taxRate != 0 ? _order.taxRate.toString() + "%" : "0";
+      feeServiceController.text = _order.serviceCharge != null && _order.serviceCharge != 0 ? _order.serviceCharge.toString():
+      _order.serviceChargeRate != null && _order.serviceChargeRate != 0 ? _order.serviceChargeRate.toString() + "%" : "0";
     });
 
     Size size = MediaQuery.of(context).size;
@@ -699,7 +737,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             Container(
               height: 30,
               child: TextFormField(
-                obscureText: false,
                 controller: taxController,
                 style: style,
                 decoration: InputDecoration(
@@ -733,7 +770,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               height: 25,
               child: Padding(
                 padding: EdgeInsets.only(left: 10, top: 5),
-                child: Text("Phí dịch vụ (Số)", style: TextStyle(
+                child: Text("Phí dịch vụ ", style: TextStyle(
                     fontSize: 18,
                     color: Colors.blue
                 )),
@@ -742,7 +779,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             Container(
               height: 30,
               child: TextFormField(
-                obscureText: false,
                 controller: feeServiceController,
                 style: style,
                 decoration: InputDecoration(
@@ -805,10 +841,28 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   child: TextButton(
                                     onPressed: () async {
                                       setState(() {
-                                        int f = feeServiceController != null && feeServiceController.text != "" ? int.parse(feeServiceController.text) : 0;
-                                        int t = taxController != null && taxController.text != "" ? int.parse(taxController.text) : 0;
-                                        _order.serviceCharge = f;
-                                        _order.taxRate = t;
+
+                                        // Set data for "phi dich vu"
+                                        if(feeServiceController.text.contains('%')) {
+                                          var f = feeServiceController.text.toString();
+                                          f = f.replaceAll('%', '');
+                                          _order.serviceChargeRate = int.parse(f);
+                                          _order.serviceCharge = 0;
+                                        } else {
+                                          _order.serviceCharge = int.parse(feeServiceController.text);
+                                          _order.serviceChargeRate = 0;
+                                        }
+
+                                        // Set data for "thue"
+                                        if(taxController.text.contains('%')) {
+                                          var f = taxController.text.toString();
+                                          f = f.replaceAll('%', '');
+                                          _order.taxRate = int.parse(f);
+                                          _order.tax = 0;
+                                        } else {
+                                          _order.tax = int.parse(taxController.text);
+                                          _order.taxRate = 0;
+                                        }
                                       });
                                       Navigator.pop(context);
                                     },
@@ -1088,6 +1142,126 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         });
   }
 
+  Future<void> _showCombo(List<ProductRestaurantModel> combo) async {
+
+    Size size = MediaQuery.of(context).size;
+
+    int selectedNumber = 0;
+
+    return showDialog<void>(
+        context: context,
+        barrierDismissible: true,
+        builder: (BuildContext context) {
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: EdgeInsets.all(10.0),
+            child: Container(
+              height: size.height * 0.6,
+              width: size.width * 0.8, decoration: BoxDecoration(
+                  color: Colors.white
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Container(
+                    height: size.height * 0.1,
+                    width: size.width * 0.8,
+                    decoration: BoxDecoration(
+                      color: PrimaryGreenColor
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 20, left: 20),
+                      child: Text("CHỌN MÓN THEO COMBO", style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24
+                      )),
+                    )
+                  ),
+                  Container(
+                    height: size.height * 0.4,
+                    width: size.width * 0.8,
+                    child: CustomGridView( callback: (val) => setState( () => {selectedNumber = val}), combo: combo,)
+                  ),
+                  Container(
+                    height: size.height * 0.1 - 20,
+                    width: size.width * 0.8,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          width: 120,
+                        ),
+                        Container(
+                          width: 140,
+                          height: 60,
+                          margin: EdgeInsets.only(right: 10.0),
+                          decoration: BoxDecoration(
+                            color: PrimaryGreenLightColor,
+                            borderRadius: BorderRadius.circular(5.0)
+                          ),
+                          child: TextButton(
+                            onPressed: () {
+                              setState(() {
+                                ProductOrderModel selectedProduct = new ProductOrderModel(combo[0].id,
+                                    combo[selectedNumber].productCode, combo[selectedNumber].productName,
+                                    combo[selectedNumber].categoryParentId,combo[selectedNumber].categoryParentCode,
+                                    combo[selectedNumber].categoryParentName, combo[selectedNumber].categoryId,
+                                    combo[selectedNumber].categoryCode, combo[selectedNumber].categoryName,
+                                    "CHECKIN",  combo[selectedNumber].price,  combo[selectedNumber].imageUrl,
+                                    combo[selectedNumber].combo,  combo[selectedNumber].categoryStatus,
+                                    combo[selectedNumber].supplies,  combo[selectedNumber].unitCode,
+                                    combo[selectedNumber].unitId, combo[selectedNumber].unitName,
+                                    combo[selectedNumber].unitStatus, 0 , '', 0, 0, false, "", 1);
+                                int cnt;
+                                if( _items != null && _items.length > 0) {
+                                  for(int j = 0; j< _items.length; j++) {
+                                    if(combo[selectedNumber].id.toString() == _items[j].id.toString()
+                                        && _items[j].product.status == "CHECKIN") {
+                                      cnt = j;
+                                    }
+                                  }
+                                  print("count ${cnt.toString()}");
+                                  if(cnt == null) {
+                                    listKey.currentState.insertItem(0,
+                                        duration: const Duration(
+                                            milliseconds: 500));
+                                    final item = new ItemProduct(combo[selectedNumber].id.toString() , selectedProduct, 1);
+                                    _items = []
+                                      ..add(item)
+                                      ..addAll(_items);
+                                  } else {
+                                    _items[cnt].number = _items[cnt].number + 1;
+                                    _items = []..addAll(_items);
+                                  }
+                                } else {
+                                  listKey.currentState.insertItem(0,
+                                      duration: const Duration(
+                                          milliseconds: 500));
+                                  final item = new ItemProduct(combo[selectedNumber].id.toString(), selectedProduct, 1);
+                                  _items = []
+                                    ..add(item)
+                                    ..addAll(_items);
+                                }
+                                Navigator.pop(context);
+                              });
+                            },
+                            child: Text("Cập nhật", style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20
+                            )),
+                          ),
+                        )
+                      ],
+                    )
+                  )
+                ],
+              ),
+            ),
+          );
+        });
+  }
+
   _scrollListener() {
     setState(() {
       _scrollPosition = _scrollController.position.pixels;
@@ -1316,7 +1490,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                                 listTabsView[i][index].unitStatus, 0 , '', 0, 0, false, "", 1);
                                             if( _items != null && _items.length > 0) {
                                               for(int j = 0; j< _items.length; j++) {
-                                                if(listTabsView[i][index].id.toString() == _items[j].id.toString()) {
+                                                if(listTabsView[i][index].id.toString() == _items[j].id.toString()
+                                                 && _items[j].product.status == "CHECKIN") {
                                                   cnt = j;
                                                 }
                                               }
@@ -1340,6 +1515,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                               _items = []
                                                 ..add(item)
                                                 ..addAll(_items);
+                                            }
+
+                                            //TODO: show combo
+                                            if(listTabsView[i][index].combo != null && listTabsView[i][index].combo.length > 0) {
+                                              _showCombo(listTabsView[i][index].combo);
                                             }
                                           });
                                         },
@@ -1420,96 +1600,393 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             begin: Offset(0.0, 0.0),
             end: Offset(0.0, 0.0)
         ).animate(animation),
-        child: Container(
-          margin: EdgeInsets.only(bottom: 5),
-          child: Slidable(
-            actionPane: SlidableScrollActionPane(),
-            actionExtentRatio: 0.3,
-            actions: <Widget>[
-              IconSlideAction(
-                caption: 'Delete',
-                color: Colors.red,
-                icon: Icons.delete,
-                onTap: () {
-                  setState(() {
-                    if(_items.length == 1) {
-                      listKey.currentState.removeItem( 0,
-                              (BuildContext context, animation) {
-                            return Container();
-                          });
-                      _items.removeAt(0);
-                      return;
-                    } else {
-                      listKey.currentState.removeItem(index,
-                              (context, animation) => _buildItem(context, 0, animation),
-                          duration: const Duration(milliseconds: 300));
-                      _items.removeAt(index);
-                    }
-                  });
-                },
-              ),
-              Container(
-                  width: 70,
-                  height: 70,
-                  decoration: BoxDecoration(
-                      color: PrimaryGreenColor
-                  ),
-                  child: TextButton(
-                    onPressed: () {
-                      _showDialogEdit(item);
-                    },
-                    style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        alignment: Alignment.center),
-                    child: Stack(
-                      children: [
-                        Positioned(
-                          left: 0,
-                          top: 0,
-                          child: Icon(
-                            Icons.edit,
-                            size: 25,
-                            color: Colors.white,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Container(
+            width: size.width * 0.33,
+            margin: EdgeInsets.only(bottom: 5),
+            child: item.product.status == 'CHECKIN' ?
+            Slidable(
+              actionPane: SlidableScrollActionPane(),
+              actionExtentRatio: 0.3,
+              actions: <Widget>[
+                IconSlideAction(
+                  caption: 'Delete',
+                  color: Colors.red,
+                  icon: Icons.delete,
+                  onTap: () {
+                    setState(() {
+                      if(_items.length == 1) {
+                        listKey.currentState.removeItem( 0,
+                                (BuildContext context, animation) {
+                              return Container();
+                            });
+                        _items.removeAt(0);
+                        return;
+                      } else {
+                        listKey.currentState.removeItem(index,
+                                (context, animation) => _buildItem(context, 0, animation),
+                            duration: const Duration(milliseconds: 300));
+                        _items.removeAt(index);
+                      }
+                    });
+                  },
+                ),
+                Container(
+                    width: 70,
+                    height: 70,
+                    decoration: BoxDecoration(
+                        color: PrimaryGreenColor
+                    ),
+                    child: TextButton(
+                      onPressed: () {
+                        _showDialogEdit(item);
+                      },
+                      style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          alignment: Alignment.center),
+                      child: Stack(
+                        children: [
+                          Positioned(
+                            left: 0,
+                            top: 0,
+                            child: Icon(
+                              Icons.edit,
+                              size: 25,
+                              color: Colors.white,
+                            ),
                           ),
+                          Padding(
+                            padding: EdgeInsets.only(top: 25, right: 15),
+                            child: Text("Edit", style: TextStyle(
+                                color: Colors.white
+                            )),
+                          )
+                        ],
+                      ),
+                    )
+                ),
+              ],
+              child: Container(
+                width: size.width * 0.3,
+                decoration: BoxDecoration(
+                ),
+                child:  Container(
+                  width: size.width * 0.3,
+                  decoration: BoxDecoration(
+                    color: kPrimaryLightColor,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Container(
+                          width: size.width * 0.3,
+                          height: 30,
+                          child: Row(
+                            children: [
+                              Container(
+                                  height: 30,
+                                  padding: EdgeInsets.only(left: 4),
+                                  width: size.width * 0.17 - 2,
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(item != null && item.product != null ? item.product.productName : '' ,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                            fontSize: 17
+                                        )),
+                                  )
+                              ),
+                              Container(
+                                  width: size.width * 0.13,
+                                  decoration: BoxDecoration(
+                                  ),
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(' Đã giảm: ${item.product.discount != null && item.product.discount != 0 ?
+                                    item.product.discount * item.number : item.product.discountRate != null && item.product.discountRate != 0 ?
+                                    (item.product.discountRate * item.product.price * item.number / 100).round() : 0}',
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                            fontSize: 14,
+                                        )),
+                                  )
+                              )
+                            ],
+                          )
+                      ),
+                      Container(
+                        height: 40,
+                        width: size.width * 0.3,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                                height: 40,
+                                width: size.width * 0.15,
+                                padding: EdgeInsets.only(left: 4),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text( Money.fromInt((item.product.price * item.number), vnd).format('###,### CCC').toString() , style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold
+                                  )),
+                                )
+                            ),
+                            Container(
+                              padding: EdgeInsets.only(),
+                              height: 40,
+                              width: 40,
+                              decoration: BoxDecoration(
+                                  border: Border.all(
+                                      color: PrimaryGreenColor
+                                  )
+                              ),
+                              child: TextButton(
+                                onPressed: () {
+                                  setState(() {
+                                    if(_items[index].number > 1) {
+                                      _items[index].number = _items[index].number -1;
+                                      _items = []..addAll(_items);
+                                    } else {
+                                      if (_items.length == 1) {
+                                        listKey.currentState.removeItem(
+                                            0, (BuildContext context,
+                                            Animation<double> animation) {
+                                          return Container();
+                                        });
+                                        _items.removeAt(0);
+                                        return;
+                                      } else {
+                                        listKey.currentState.removeItem(
+                                            index,
+                                                (_, animation) =>
+                                                _buildItem(context, 0, animation),
+                                            duration: const Duration(milliseconds: 200)
+                                        );
+                                        _items.removeAt(index);
+                                      }
+                                    }
+                                  });
+                                },
+                                child:  Icon(
+                                  Icons.remove,
+                                  size: 20,
+                                  color: PrimaryGreenColor,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              height: 40,
+                              width: 50,
+                              decoration: BoxDecoration(
+                                color: PrimaryGreenColor,
+                              ),
+                              child: Center(
+                                child: Text(item != null && item.number != null ? item.number.toString(): '' , style: TextStyle(
+                                  fontSize: 17,
+                                  color: Colors.white,
+                                )),
+                              ),
+                            ),
+                            Container(
+                                height: 40,
+                                width: 40,
+                                decoration: BoxDecoration(
+                                    border: Border.all(
+                                        color: PrimaryGreenColor
+                                    )
+                                ),
+                                child: Container(
+                                  child: TextButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        _items[index].number = _items[index].number + 1;
+                                        _items = []..addAll(_items);
+                                      });
+                                    },
+                                    child: Icon(
+                                      Icons.add,
+                                      size: 20,
+                                      color: PrimaryGreenColor,
+                                    ),
+                                  ),
+                                )
+                            ),
+                          ],
                         ),
-                        Padding(
-                          padding: EdgeInsets.only(top: 25, right: 15),
-                          child: Text("Edit", style: TextStyle(
-                              color: Colors.white
-                          )),
+                      )
+                    ],
+                  ),
+                ),
+              ),
+            ) : item.product.status == "CHECKEDIN" ? Slidable(
+                actionPane: SlidableScrollActionPane(),
+                actionExtentRatio: 0.3,
+                actions: <Widget>[
+                  IconSlideAction(
+                    caption: 'Delete',
+                    color: Colors.red,
+                    icon: Icons.delete,
+                    onTap: () {
+                      setState(() {
+                        if(_items.length > 0) {
+                          int indexItem = _items.indexWhere((element) => element.id == item.id &&
+                              element.product.status == item.product.status);
+                          setState(() {
+                            if (indexItem != null) {
+                              _items[indexItem].product.status = "PRE-CANCELLED";
+                            }
+                          });
+                        }
+                      });
+                    },
+                  ),
+                ],
+                child: Container(
+                  width: size.width * 0.3,
+                  decoration: BoxDecoration(
+                  ),
+                  child:  Container(
+                    width: size.width * 0.3,
+                    decoration: BoxDecoration(
+                      color: PrimaryOrangeColor,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Container(
+                            width: size.width * 0.3,
+                            height: 30,
+                            child: Row(
+                              children: [
+                                Container(
+                                    height: 30,
+                                    padding: EdgeInsets.only(left: 4),
+                                    width: size.width * 0.17 - 2,
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(item != null && item.product != null ? item.product.productName : '' ,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                              fontSize: 17
+                                          )),
+                                    )
+                                ),
+                                Container(
+                                    width: size.width * 0.13,
+                                    decoration: BoxDecoration(
+                                    ),
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(' Đã giảm: ${item.product.discountRate * item.number}',
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                              fontSize: 14,
+                                          )),
+                                    )
+                                )
+                              ],
+                            )
+                        ),
+                        Container(
+                          height: 40,
+                          width: size.width * 0.3,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                  height: 40,
+                                  width: size.width * 0.15,
+                                  padding: EdgeInsets.only(left: 4),
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text( Money.fromInt((item.product.price * item.number), vnd).format('###,### CCC').toString() , style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold
+                                    )),
+                                  )
+                              ),
+                              Container(
+                                padding: EdgeInsets.only(),
+                                height: 40,
+                                width: 40,
+                                decoration: BoxDecoration(
+                                ),
+                              ),
+                              Container(
+                                height: 40,
+                                width: 50,
+                                decoration: BoxDecoration(
+                                  // color: PrimaryGreenColor,
+                                ),
+                                child: Center(
+                                  child: Text('SL: ${item.number}' , style: TextStyle(
+                                    fontSize: 17,)),
+                                ),
+                              ),
+                              Container(
+                                height: 40,
+                                width: 40,
+                                decoration: BoxDecoration(
+                                ),
+                              ),
+                            ],
+                          ),
                         )
                       ],
                     ),
-                  )
-              ),
-            ],
-            child: Container(
+                  ),
+                )
+            ) : item.product.status == "CANCELLED" ? Container(
               width: size.width * 0.3,
               decoration: BoxDecoration(
               ),
               child:  Container(
                 width: size.width * 0.3,
                 decoration: BoxDecoration(
-                  color: kPrimaryLightColor,
+                  color: PrimaryGrey2Color,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Container(
+                        width: size.width * 0.3,
                         height: 30,
-                        child: Container(
-                            height: 30,
-                            padding: EdgeInsets.only(left: 4),
-                            width: size.width * 0.3 - 2,
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(item != null && item.product != null ? item.product.productName : '' ,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                      fontSize: 17
-                                  )),
+                        child: Row(
+                          children: [
+                            Container(
+                                height: 30,
+                                padding: EdgeInsets.only(left: 4),
+                                width: size.width * 0.17 - 2,
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(item != null && item.product != null ? item.product.productName : '' ,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                          fontSize: 17
+                                      )),
+                                )
+                            ),
+                            Container(
+                                width: size.width * 0.13,
+                                decoration: BoxDecoration(
+                                ),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(' Đã giảm: ${item.product.discountRate * item.number}',
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                          fontSize: 14,
+                                      )),
+                                )
                             )
+                          ],
                         )
                     ),
                     Container(
@@ -1536,80 +2013,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             height: 40,
                             width: 40,
                             decoration: BoxDecoration(
-                                border: Border.all(
-                                    color: PrimaryGreenColor
-                                )
-                            ),
-                            child: TextButton(
-                              onPressed: () {
-                                setState(() {
-                                  if(_items[index].number > 1) {
-                                    _items[index].number = _items[index].number -1;
-                                    _items = []..addAll(_items);
-                                  } else {
-                                    if (_items.length == 1) {
-                                      listKey.currentState.removeItem(
-                                          0, (BuildContext context,
-                                          Animation<double> animation) {
-                                        return Container();
-                                      });
-                                      _items.removeAt(0);
-                                      return;
-                                    } else {
-                                      listKey.currentState.removeItem(
-                                          index,
-                                              (_, animation) =>
-                                              _buildItem(context, 0, animation),
-                                          duration: const Duration(milliseconds: 200)
-                                      );
-                                      _items.removeAt(index);
-                                    }
-                                  }
-                                });
-                              },
-                              child:  Icon(
-                                Icons.remove,
-                                size: 20,
-                                color: PrimaryGreenColor,
-                              ),
                             ),
                           ),
                           Container(
                             height: 40,
                             width: 50,
-                            decoration: BoxDecoration(
-                              color: PrimaryGreenColor,
-                            ),
+                            decoration: BoxDecoration(),
                             child: Center(
-                              child: Text(item != null && item.number != null ? item.number.toString(): '' , style: TextStyle(
+                              child: Text( 'SL: ${item.number}' , style: TextStyle(
                                 fontSize: 17,
-                                color: Colors.white,
                               )),
                             ),
                           ),
                           Container(
-                              height: 40,
-                              width: 40,
-                              decoration: BoxDecoration(
-                                  border: Border.all(
-                                      color: PrimaryGreenColor
-                                  )
-                              ),
-                              child: Container(
-                                child: TextButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      _items[index].number = _items[index].number + 1;
-                                      _items = []..addAll(_items);
-                                    });
-                                  },
-                                  child: Icon(
-                                    Icons.add,
-                                    size: 20,
-                                    color: PrimaryGreenColor,
-                                  ),
-                                ),
-                              )
+                            height: 40,
+                            width: 40,
+                            decoration: BoxDecoration(
+                            ),
                           ),
                         ],
                       ),
@@ -1617,9 +2037,129 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ],
                 ),
               ),
+            ): Slidable(
+                actionPane: SlidableScrollActionPane(),
+                actionExtentRatio: 0.3,
+                actions: <Widget>[
+                  IconSlideAction(
+                    caption: 'Restored',
+                    color: Colors.blue,
+                    icon: Icons.restore,
+                    onTap: () {
+                      setState(() {
+                        if(_items.length > 0) {
+                          int indexItem = _items.indexWhere((element) => element.id == item.id &&
+                              element.product.status == item.product.status);
+                          setState(() {
+                            if (indexItem != null) {
+                              _items[indexItem].product.status = "CHECKEDIN";
+                            }
+                          });
+                        }
+                      });
+                    },
+                  ),
+                ],
+                child: Container(
+                  width: size.width * 0.3,
+                  decoration: BoxDecoration(
+                  ),
+                  child:  Container(
+                    width: size.width * 0.3,
+                    decoration: BoxDecoration(
+                      color: Colors.redAccent,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Container(
+                            width: size.width * 0.3,
+                            height: 30,
+                            child: Row(
+                              children: [
+                                Container(
+                                    height: 30,
+                                    padding: EdgeInsets.only(left: 4),
+                                    width: size.width * 0.17 - 2,
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(item != null && item.product != null ? item.product.productName : '' ,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                              fontSize: 17
+                                          )),
+                                    )
+                                ),
+                                Container(
+                                    width: size.width * 0.13,
+                                    decoration: BoxDecoration(
+                                    ),
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(' Đã giảm: ${item.product.discountRate * item.number}',
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                              fontSize: 14,
+                                          )),
+                                    )
+                                )
+                              ],
+                            )
+                        ),
+                        Container(
+                          height: 40,
+                          width: size.width * 0.3,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                  height: 40,
+                                  width: size.width * 0.15,
+                                  padding: EdgeInsets.only(left: 4),
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text( Money.fromInt((item.product.price * item.number), vnd).format('###,### CCC').toString() , style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold
+                                    )),
+                                  )
+                              ),
+                              Container(
+                                padding: EdgeInsets.only(),
+                                height: 40,
+                                width: 40,
+                                decoration: BoxDecoration(
+                                ),
+                              ),
+                              Container(
+                                height: 40,
+                                width: 50,
+                                decoration: BoxDecoration(
+                                ),
+                                child: Center(
+                                  child: Text('SL: ${item.number}' , style: TextStyle(
+                                    fontSize: 17,)),
+                                ),
+                              ),
+                              Container(
+                                height: 40,
+                                width: 40,
+                                decoration: BoxDecoration(
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                )
             ),
           ),
         ),
+
       ),
     );
   }
@@ -1632,7 +2172,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     if(res.status && res.data != null && res.data.length > 0) {
       List<ProductRestaurantModel> product = [];
-      print('length: ${res.data.length}');
       for(int i = 0; i < res.data.length ; i++) {
         setState(() {
           product.add(ProductRestaurantModel.fromJson(res.data[i]));
@@ -1751,6 +2290,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       ),
     );
   }
+
   @override
   Widget build(BuildContext context) {
 
@@ -1760,9 +2300,26 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     if(_items != null && _items.length > 0) {
       _items.forEach((element) {
-        _total += element.product.price * element.number;
+        if (element.product.status == "CHECKEDIN" || element.product.status == "CHECKIN" ) {
+          int discount = element.product.discount != null && element.product.discount != 0 ?
+          element.product.discount * element.number : element.product.discountRate != null && element.product.discountRate != 0 ?
+          (element.product.discountRate * element.product.price * element.number / 100).round() : 0;
+          setState(() {
+            _total += (element.product.price * element.number) - discount;
+          });
+        }
       });
     }
+
+    int fee = _order != null && _order.serviceCharge != null && _order.serviceCharge != 0 ? _order.serviceCharge.toString():
+    _order != null && _order.serviceChargeRate != null && _order.serviceChargeRate != 0 ? (_order.serviceChargeRate * _total / 100).round()  : 0;
+
+    int _totalAfterFee =  _total + fee;
+
+    int tax = _order != null && _order.tax != null && _order.tax != 0 ? (_order.tax + _totalAfterFee) :
+    _order != null &&  _order.taxRate != null && _order.taxRate != 0 ? ((_order.taxRate) * _totalAfterFee / 100).round() : 0;
+
+    int _totalAfterFeeAndTax = _totalAfterFee + tax;
 
     // TODO: implement build
     return _loading ? loading() : Scaffold(
@@ -1926,7 +2483,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         ),
                       ),
                       Container(
-                        height: size.height - 360,
+                        height: size.height - 410,
                         decoration: BoxDecoration(
                         ),
                         child: Scrollbar(
@@ -2021,10 +2578,25 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         ),
                       ),
                       Container(
+                        height: 40,
+                        margin: EdgeInsets.only(left: 20, right: 40),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              child: Text("Thuế: ${tax.toString()}", style: TextStyle()),
+                            ),
+                            Container(
+                              child: Text("Phí dịch vụ: ${fee.toString()}", style: TextStyle()),
+                            )
+                          ],
+                        ),
+                      ),
+                      Container(
                         height: 30,
                         margin: EdgeInsets.only(left: 10, right: 10, top: 10),
                         child: Center(
-                          child: Text("Tổng tiền: ${Money.fromInt(_total, vnd).format('###,### CCC').toString()}" , style: TextStyle(
+                          child: Text("Tổng tiền: ${Money.fromInt(_totalAfterFeeAndTax , vnd).format('###,### CCC').toString()}" , style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold
                           )),
@@ -2040,15 +2612,30 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         ),
                         child: TextButton(
                           onPressed: () {
-                            for(var i = 0; i <= _items.length - 1; i++) {
-                              listKey.currentState.removeItem( 0,
-                                      (context, animation) {
-                                        return Container();
-                                      });
+
+                            if(_order.reservationId != null) {
+                              setState(() {
+                                for(var i = 0; i <= _items.length - 1; i++) {
+                                  if(_items[i].product.status == "CHECKIN"){
+                                    listKey.currentState.removeItem( 0,
+                                            (context, animation) {
+                                          return Container();
+                                        });
+                                  }
+                                }
+                                _items.removeWhere((element) => element.product.status == "CHECKIN");
+                              });
+                            } else {
+                              for(var i = 0; i <= _items.length - 1; i++) {
+                                listKey.currentState.removeItem( 0,
+                                        (context, animation) {
+                                      return Container();
+                                    });
+                              }
+                              setState(() {
+                                _items.clear();
+                              });
                             }
-                            setState(() {
-                              _items.clear();
-                            });
                           },
                           child: Text("XOÁ TẤT CẢ", style: TextStyle(
                             color: Colors.white
@@ -2065,57 +2652,73 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         ),
                         child: TextButton(
                           onPressed: () async {
-                            List<Map<String, dynamic>> list = [];
-                            _items.forEach((element) {
-                              ProductOrderModel pro = new ProductOrderModel(element.product.id, element.product.productCode,
-                                  element.product.productName, element.product.categoryParentId, element.product.categoryParentCode,
-                                  element.product.categoryParentName, element.product.categoryId, element.product.categoryCode,
-                                  element.product.categoryName, "CHECKIN", element.product.price, element.product.imageUrl,
-                                  element.product.combo, element.product.categoryStatus, element.product.supplies, element.product.unitCode,
-                                  element.product.unitId, element.product.unitName, element.product.unitStatus, 0,
-                                  "", 0, 0,
-                                  false, "", element.number);
-                              list.add(pro.toJson());
-                            });
+                            if(this._order.reservationId != null) {
+                              //TODO: controls the order got bill
+                              List<ProductOrderModel> list = [];
+                              _items.forEach((element) {
+                                ProductOrderModel pro = element.product;
+                                if (element.product.status == "PRE-CANCELLED") {
+                                  pro.status = "CANCELLED";
+                                }
+                                pro.quantity = element.number;
+                                list.add(pro);
+                              });
+                              DateTime now = DateTime.now();
+                              int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
+                              _order.products = list;
+                              _order.usedAt = timeOrder;
 
-                            UserModel user = Provider.of<SettingProvider>(context, listen: false).userInfo;
-                            DateTime now = DateTime.now();
-                            int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
-                            Map<String, dynamic> order = {
-                              'branch_code': user.branchCode,
-                              'branch_id': user.branchId,
-                              'branch_name': user.branchName,
-                              'discount': 0,
-                              'discount_rate': 0,
-                              'group_payment': 0,
-                              'payment_result': "CASH",
-                              'products': [],
-                              'service_charge': 0,
-                              'service_change_rate': 0,
-                              'status': 'CHECKIN',
-                              'table': widget.table.toJson(),
-                              'tax': 0,
-                              'tax_rate': 0,
-                              'used_at': timeOrder
-                            };
+                              // TODO: Order
+                              setState(() {
+                                _isLoading = true;
+                              });
+                              ResultModel res = await restaurantService.reOrderFood(_order.toJson(), _order.id);
+                              if(res.status) {
+                                _showToast();
+                                //TODO: go to table screen
+                                Navigator.push(context,
+                                    MaterialPageRoute(builder: (context) => TableScreen())
+                                );
 
-                            // TODO: Order
-                            setState(() {
-                              _isLoading = true;
-                            });
-                            ResultModel res = await restaurantService.orderFood(order);
-                            if(res.status) {
-                              _showToast();
-                              //TODO: go to table screen
-                              Navigator.push(context,
-                                  MaterialPageRoute(builder: (context) => TableScreen())
-                              );
+                              } else {
+                                _showToastError();
+                              }
+                              setState(() {
+                                _isLoading = false;
+                              });
                             } else {
-                              _showToastError();
+                              //TODO: controls the order didn't got bill
+                              List<ProductOrderModel> list = [];
+                              _items.forEach((element) {
+                                ProductOrderModel pro = element.product;
+                                if (element.product.status == "PRE-CANCELLED") {
+                                  pro.status = "CANCELLED";
+                                }
+                                pro.quantity = element.number;
+                                list.add(pro);
+                              });
+
+                              DateTime now = DateTime.now();
+                              int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
+                              _order.usedAt = timeOrder;
+                              _order.tableInfo = widget.table;
+
+                              // TODO: Order
+                              setState(() {
+                                _isLoading = true;
+                              });
+                              ResultModel res = await restaurantService.orderFood(_order.toJson());
+                              if(res.status) {
+                                _showToast();
+                                //TODO: go to table screen
+                                Navigator.push(context,
+                                    MaterialPageRoute(builder: (context) => TableScreen())
+                                );
+                              } else {
+                                _showToastError();
+                              }
                             }
-                            setState(() {
-                              _isLoading = false;
-                            });
+
                           },
                           child: Text("ĐẶT MÓN", style: TextStyle(
                               color: Colors.white
@@ -2163,5 +2766,4 @@ class ItemProduct {
   set product(ProductOrderModel value) {
     _product = value;
   }
-
 }

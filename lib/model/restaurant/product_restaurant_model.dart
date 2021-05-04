@@ -11,7 +11,7 @@ class ProductRestaurantModel {
   int _status;
   int _price;
   String _imageUrl;
-  dynamic _combo;
+  List<ProductRestaurantModel> _combo;
   int _categoryStatus;
   dynamic _supplies;
   String _unitCode;
@@ -25,10 +25,19 @@ class ProductRestaurantModel {
       this._supplies, this._unitCode, this._unitId, this._unitName, this._unitStatus);
 
   factory ProductRestaurantModel.fromJson(dynamic json) {
+
+    List<ProductRestaurantModel> combo = [];
+
+    if (json['combo'] != null && json['combo'].length > 0) {
+      for(int i = 0; i < json['combo'].length; i++) {
+        combo.add(ProductRestaurantModel.fromJson(json['combo'][i]));
+      }
+    }
+
     return ProductRestaurantModel(json['_id'] as String, json['product_code'] as String, json['product_name'] as String,
     json['category_parent_id'] as String, json['category_parent_code'] as String, json['category_parent_name'] as String,
     json['category_id'] as String, json['category_code'] as String, json['category_name'] as String, json['status'] as int, json['price'] as int,
-    json['image_url'] as String, json['combo'] as dynamic, json['category_status'] as int, json['supplies'] as dynamic,
+    json['image_url'] as String, combo, json['category_status'] as int, json['supplies'] as dynamic,
     json['unit_code'] as String, json['unit_id'] as String, json['unit_name'] as String, json['unit_status'] as int);
   }
 
@@ -36,12 +45,6 @@ class ProductRestaurantModel {
 
   set id(String value) {
     _id = value;
-  }
-
-  dynamic get combo => _combo;
-
-  set combo(dynamic value) {
-    _combo = value;
   }
 
   String get productCode => _productCode;
@@ -73,6 +76,14 @@ class ProductRestaurantModel {
   set categoryParentName(String value) {
     _categoryParentName = value;
   }
+
+
+  List<ProductRestaurantModel> get combo => _combo;
+
+  set combo(List<ProductRestaurantModel> value) {
+    _combo = value;
+  }
+
 
   String get categoryId => _categoryId;
 

@@ -67,10 +67,9 @@ class RestaurantService {
     }
   }
 
-  Future<ResultModel> reOrderFood(Map<String, dynamic> data, String tableId) async {
-    try {
-      Response response = await client.dio.request(
-          API_URL + '/reservation/order/${tableId.toString()}',
+  Future<ResultModel> reOrderFood(Map<String, dynamic> data, String orderId) async {
+    try {Response response = await client.dio.request(
+          API_URL + '/reservation/order/${orderId.toString()}',
           data: data,
           options: Options(method: 'PUT')
       );

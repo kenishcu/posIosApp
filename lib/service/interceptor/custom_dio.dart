@@ -33,7 +33,7 @@ class CustomDio {
           return handler.next(options);
         },
         onResponse: (Response response, ResponseInterceptorHandler handler) async {
-          // print('RESPONSE[${response.statusCode}] => PATH: ${response.requestOptions?.path}');
+          print('RESPONSE[${response.statusCode}] => PATH: ${response.requestOptions?.path}');
           if (response.statusCode == 200 && response.data != null && response.data['token'] != null) {
             SharedPreferences prefs = await SharedPreferences.getInstance();
             prefs.setString('token', response.data['token']);

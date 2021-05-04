@@ -1,3 +1,5 @@
+import 'package:pos_ios_bvhn/model/restaurant/product_restaurant_model.dart';
+
 class ProductOrderModel {
 
   String _id;
@@ -12,7 +14,7 @@ class ProductOrderModel {
   String _status;
   int _price;
   String _imageUrl;
-  dynamic _combo;
+  List<ProductRestaurantModel> _combo;
   int _categoryStatus;
   dynamic _supplies;
   String _unitCode;
@@ -36,10 +38,18 @@ class ProductOrderModel {
       this._note, this._quantity);
 
   factory ProductOrderModel.fromJson(dynamic json) {
+
+    List<ProductRestaurantModel> combo = [];
+
+    if (json['combo'] != null && json['combo'].length > 0) {
+      for(int i = 0; i < json['combo'].length; i++) {
+        combo.add(ProductRestaurantModel.fromJson(json['combo'][i]));
+      }
+    }
     return ProductOrderModel(json['_id'] as String, json['product_code'] as String, json['product_name'] as String,
         json['category_parent_id'] as String, json['category_parent_code'] as String, json['category_parent_name'] as String,
         json['category_id'] as String, json['category_code'] as String, json['category_name'] as String, json['status'] as String, json['price'] as int,
-        json['image_url'] as String, json['combo'] as dynamic, json['category_status'] as int, json['supplies'] as dynamic,
+        json['image_url'] as String, combo, json['category_status'] as int, json['supplies'] as dynamic,
         json['unit_code'] as String, json['unit_id'] as String, json['unit_name'] as String, json['unit_status'] as int,
         json['discount'] as int, json['discount_field'] as String, json['discount_rate'] as int, json['discount_value'] as int,
         json['is_edit'] as bool, json['note'] as String, json['quantity'] as int);

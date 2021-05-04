@@ -1,15 +1,15 @@
 class UserModelSqflite {
 
-  final int id;
-  final String name;
-  final String email;
-  final String userName;
-  final String branchId;
-  final String branchCode;
-  final String branchName;
-  final int roleId;
-  final String roleCode;
-  final String roleName;
+  int id;
+  String name;
+  String email;
+  String userName;
+  String branchId;
+  String branchCode;
+  String branchName;
+  int roleId;
+  String roleCode;
+  String roleName;
 
   UserModelSqflite({this.id, this.name, this.email, this.userName, this.branchId,
     this.branchCode, this.branchName, this.roleId, this.roleCode, this.roleName});
@@ -31,7 +31,7 @@ class UserModelSqflite {
 
   factory UserModelSqflite.fromMap(dynamic json) {
     return UserModelSqflite(
-        id: json['id'],
+        id: json['_id'],
         name: json['name'],
         userName: json['userName'],
         email: json['email'],

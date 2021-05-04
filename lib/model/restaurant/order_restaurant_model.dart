@@ -4,6 +4,7 @@ import 'package:pos_ios_bvhn/model/table/table_model.dart';
 
 class OrderRestaurantModel {
 
+  String _id;
   String _branchId;
   String _branchName;
   String _branchCode;
@@ -28,7 +29,7 @@ class OrderRestaurantModel {
   TableModel _tableInfo;
   int _usedAt;
 
-  OrderRestaurantModel(this._branchId, this._branchName, this._branchCode,
+  OrderRestaurantModel(this._id, this._branchId, this._branchName, this._branchCode,
       this._commissionRestaurantModel, this._discount, this._discountRate,
       this._groupPayment, this._paymentResult, this._products, this._reservationId,
       this._serviceCharge, this._serviceChargeRate, this._status, this._tableInfo,
@@ -41,7 +42,7 @@ class OrderRestaurantModel {
         products.add(ProductOrderModel.fromJson(json['products'][i]));
       }
     }
-    return OrderRestaurantModel(json['branch_id'] as String, json['branch_name'] as String,
+    return OrderRestaurantModel(json['_id'] as String, json['branch_id'] as String, json['branch_name'] as String,
     json['branch_code'] as String, CommissionRestaurantModel.fromJson(json['commission']), json['discount'] as int,
     json['discount_rate'] as int, json['group_payment'] as int, json['payment_result'] as String,
     products, json['reservation_id'] as int, json['service_charge'] as int,
@@ -55,6 +56,7 @@ class OrderRestaurantModel {
       list.add(element.toJson());
     });
     return {
+      '_id': _id,
       'branch_code': _branchCode,
       'branch_id': _branchId,
       'branch_name': _branchName,
@@ -72,6 +74,12 @@ class OrderRestaurantModel {
       'tax_rate': _taxRate,
       'used_at': _usedAt
     };
+  }
+
+  String get id => _id;
+
+  set id(String value) {
+    _id = value;
   }
 
   String get branchId => _branchId;

@@ -22,6 +22,7 @@ class UserSqfLite {
         where: '_id = ?',
         whereArgs: [id]);
     if (maps.length > 0) {
+      print('maps + ${maps.toString()}');
       return UserModelSqflite.fromMap(maps.first);
     } else {
       return null;
@@ -35,6 +36,7 @@ class UserSqfLite {
 
   Future update (UserModelSqflite userModelSqflite) async {
     Database db = await dbHelper.database;
+    print('update ${userModelSqflite.id}' );
     return await db.update(table, userModelSqflite.toMap(), where: '_id = ?', whereArgs: [userModelSqflite.id]);
   }
 
