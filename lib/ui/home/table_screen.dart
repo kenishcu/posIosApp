@@ -1,11 +1,17 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:pos_ios_bvhn/components/drawer.dart';
 import 'package:pos_ios_bvhn/model/results_model.dart';
 import 'package:pos_ios_bvhn/model/table/position_table_model.dart';
 import 'package:pos_ios_bvhn/model/table/table_model.dart';
+import 'package:pos_ios_bvhn/model/user/branch_model.dart';
+import 'package:pos_ios_bvhn/model/user/role_model.dart';
 import 'package:pos_ios_bvhn/model/user/user_model.dart';
 import 'package:pos_ios_bvhn/provider/setting_provider.dart';
 import 'package:pos_ios_bvhn/service/table_service.dart';
+import 'package:pos_ios_bvhn/sqflite/model/user_model_sqflite.dart';
+import 'package:pos_ios_bvhn/sqflite/user_sqflite.dart';
 import 'package:pos_ios_bvhn/ui/home/home_screen.dart';
 import 'package:provider/provider.dart';
 import '../../constants.dart';
@@ -31,10 +37,35 @@ class _TableScreenState extends State<TableScreen> {
   void initState() {
     // TODO: implement initState
     super.initState();
+
+    // init data
     initData();
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   Future initData() async {
+
+    //TODO:
+    UserSqfLite userSqfLite = new UserSqfLite();
+    int c = await userSqfLite.queryRowCount();
+
+    if(c > 0) {
+      UserModelSqflite userModelSqflite = await userSqfLite.findById(1);
+      BranchModel newBranchModel = new BranchModel(userModelSqflite.branchId,
+          userModelSqflite.branchName, userModelSqflite.branchCode, 1);
+      RoleModel newRoleModel = new RoleModel(userModelSqflite.roleId,
+          userModelSqflite.roleCode, userModelSqflite.roleName);
+      UserModel userInfo = new UserModel(userModelSqflite.name, userModelSqflite.email, userModelSqflite.userName,
+          newBranchModel, userModelSqflite.branchId, userModelSqflite.branchCode,  userModelSqflite.branchName,
+          newRoleModel, userModelSqflite.roleId,
+          userModelSqflite.roleCode, userModelSqflite.roleName);
+      Provider.of<SettingProvider>(context, listen: false).setUserInfo(userInfo);
+      // update user information from cache sqflite
+    }
 
     String branchId = Provider.of<SettingProvider>(context, listen: false).userInfo.branchId;
 
@@ -67,8 +98,6 @@ class _TableScreenState extends State<TableScreen> {
 
     Size size = MediaQuery.of(context).size;
 
-    UserModel userInfo  =  Provider.of<SettingProvider>(context, listen: false).userInfo;
-
     return Scaffold(
       appBar: AppBar(
         iconTheme: IconThemeData(color: Color(0xFF848a93),),
@@ -90,85 +119,7 @@ class _TableScreenState extends State<TableScreen> {
           ),
         ),
       ),
-      drawer: Drawer(
-        child: Container(
-          decoration: BoxDecoration(
-//              borderRadius: BorderRadius.only(
-//                topRight: Radius.circular(10.0),
-//                bottomRight:  Radius.circular(10.0),
-//              ),
-              color: Color(0xFF0e1e2b)
-          ),
-          child: ListView(
-            // Important: Remove any padding from the ListView.
-            padding: EdgeInsets.zero,
-            children: <Widget>[
-              Container(
-                child: DrawerHeader(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Container(
-                        height: 40,
-                        child: Text("Tài khoản : ${userInfo.userName}", style: TextStyle(
-                            color: Colors.white
-                        )),
-                      ),
-                      Container(
-                        height: 40,
-                        child: Text("Quyền ${userInfo.roleName}, Chi nhánh ${userInfo.branchName}", style: TextStyle(
-                            color: Color(0xFF848b92)
-                        )),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                    color: Color(0xFF0e1e2b)
-                ),
-                child: ListTile(
-                  leading: Icon(
-                    Icons.repeat,
-                    color: Colors.white,
-                  ),
-                  title: Text('Chọn chi nhánh', style: TextStyle(
-                    color: Colors.white,
-                  )),
-                  onTap: () {
-                    // Update the state of the app
-                    // ...
-                    // Then close the drawer
-                    Navigator.pop(context);
-                  },
-                ),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                    color: Color(0xFF0e1e2b)
-                ),
-                child: ListTile(
-                  leading: Icon(
-                    Icons.logout,
-                    color: Colors.white,
-                  ),
-                  title: Text('Đăng xuất', style: TextStyle(
-                    color: Colors.white,
-                  )),
-                  onTap: () {
-                    // Update the state of the app
-                    // ...
-                    // Then close the drawer
-                    Navigator.pop(context);
-                  },
-                ),
-              )
-            ],
-          ),
-        ),
-      ),
+      drawer: DrawerCustom(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.start,
@@ -255,7 +206,7 @@ class _TableScreenState extends State<TableScreen> {
                                     color: tables[index].using ?  PrimaryOrangeColor : PrimaryGreenColor,
                                     borderRadius: BorderRadius.circular(20.0),
                                     border: Border.all(
-                                        color: PrimaryGreenColor,
+                                        color: tables[index].using ? Color(0xFF848a93) : PrimaryGreenColor,
                                         width: 2.0
                                     )
                                 ),
@@ -263,7 +214,7 @@ class _TableScreenState extends State<TableScreen> {
                                   onPressed: () {
                                     // TODO: If in table, there are orders, It will navigator to Screen State Order
                                     Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => HomeScreen(table: tables[index],))
+                                        MaterialPageRoute(builder: (context) => HomeScreen(table: tables[index]))
                                     );
                                   },
                                   child: Container(
@@ -272,29 +223,12 @@ class _TableScreenState extends State<TableScreen> {
                                       mainAxisAlignment: MainAxisAlignment.start,
                                       children: [
                                         Container(
-                                          child: Row(
-                                            children: [
-                                              Container(
-                                                width: 120,
-                                                child: Padding(
-                                                  padding: EdgeInsets.only(left: 20, top: 10),
-                                                  child: Text(tables[index].tableName, style: TextStyle(
-                                                      fontSize: 25,
-                                                      color: Colors.white
-                                                  )),
-                                                ),
-                                              ),
-                                              Container(
-                                                  width: 50,
-                                                  child:Padding(
-                                                    padding:  EdgeInsets.only(top: 10, left: 10),
-                                                    child: Text("", style: TextStyle(
-                                                        fontSize: 20,
-                                                        color: Colors.white
-                                                    )),
-                                                  )
-                                              )
-                                            ],
+                                          child: Padding(
+                                            padding: EdgeInsets.only(left: 0, top: 10),
+                                            child: Text(tables[index].tableName, style: TextStyle(
+                                                fontSize: 25,
+                                                color: Colors.white
+                                            )),
                                           ),
                                         ),
                                         Container(

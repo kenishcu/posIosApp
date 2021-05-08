@@ -24,7 +24,7 @@ class CustomDio {
    dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (RequestOptions options, RequestInterceptorHandler handler) async {
-          print('REQUEST[${options.method}] => PATH: ${options.path}');
+          // print('REQUEST[${options.method}] => PATH: ${options.path}');
            SharedPreferences prefs = await SharedPreferences.getInstance();
            String token = prefs.getString('token');
            if(token != null && options != null) {

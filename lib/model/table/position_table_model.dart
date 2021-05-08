@@ -16,6 +16,18 @@ class PositionTableModel {
         json['branch_name'] as String,  json['position_name'] as String, json['position_code'] as String, json['status'] as int);
   }
 
+  toJson() {
+    return {
+      '_id': _id,
+      'branch_code': _branchCode,
+      'branch_id': _branchId,
+      'branch_name': _branchName,
+      'position_code': _positionCode,
+      'position_name': _positionName,
+      'status': _status
+    };
+  }
+
   String get id => _id;
 
   set id(String value) {

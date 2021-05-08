@@ -1,4 +1,5 @@
 class TableRestaurantModel {
+
   String _id;
   String _tableCode;
   String _tableName;
@@ -13,6 +14,7 @@ class TableRestaurantModel {
     return TableRestaurantModel( json['_id'] as String, json['table_code'] as String, json['table_name'] as String,
         json['create_at'] as int, json['update_at'] as int, json['status'] as int);
   }
+
 
   String get id => _id;
 
