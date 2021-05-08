@@ -2291,6 +2291,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
+  int roundNumber(int number) {
+    int round;
+    if( number % 1000 != 0) {
+      round = ((number / 1000).round() * 1000) + 1000;
+    } else {
+      round = number;
+    }
+    return round;
+  }
+
   @override
   Widget build(BuildContext context) {
 
@@ -2313,11 +2323,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     int fee = _order != null && _order.serviceCharge != null && _order.serviceCharge != 0 ? _order.serviceCharge.toString():
     _order != null && _order.serviceChargeRate != null && _order.serviceChargeRate != 0 ? (_order.serviceChargeRate * _total / 100).round()  : 0;
+    fee = roundNumber(fee);
 
     int _totalAfterFee =  _total + fee;
 
+
     int tax = _order != null && _order.tax != null && _order.tax != 0 ? (_order.tax + _totalAfterFee) :
     _order != null &&  _order.taxRate != null && _order.taxRate != 0 ? ((_order.taxRate) * _totalAfterFee / 100).round() : 0;
+    tax = roundNumber(tax);
 
     int _totalAfterFeeAndTax = _totalAfterFee + tax;
 
