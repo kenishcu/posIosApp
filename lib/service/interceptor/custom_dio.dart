@@ -1,11 +1,14 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:pos_ios_bvhn/app.dart';
+import 'package:pos_ios_bvhn/sqflite/user_sqflite.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../constants.dart';
 import '../authen_service.dart';
 import 'cache_interceptor.dart';
 
-class CustomDio {
+class CustomDio extends Interceptor {
 
   Dio dio = new Dio();
 
@@ -43,16 +46,17 @@ class CustomDio {
         onError: (DioError err, ErrorInterceptorHandler handler) async {
           print('ERROR[${err.response?.statusCode}] => PATH: ${err.requestOptions?.path}');
           if(err.response?.statusCode == 401 || err.response?.statusCode == 402) {
-            print("Auth failed");
-            // final authRepository = new AuthRepository();
-            // await authRepository.refreshToken();
-            // return _retry(err.requestOptions);
+            NavigatorState navigatorState = App().navigatorKey.currentState;
+            if (navigatorState != null) {
+              UserSqfLite userSqfLite = new UserSqfLite();
+              await userSqfLite.delete(1);
+              navigatorState.pushNamed('/');
+            }
           }
           return handler.next(err);
         }
       )
    );
-   // dio.interceptors.add(CacheInterceptors());
   }
 
   Future<Response<dynamic>> _retry(RequestOptions requestOptions) async {

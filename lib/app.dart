@@ -12,6 +12,11 @@ import 'package:pos_ios_bvhn/ui/order/order_screen.dart';
 import 'package:provider/provider.dart';
 
 class App extends StatefulWidget {
+
+  App({Key key, this.navigatorKey}) : super(key: key);
+
+  final GlobalKey<NavigatorState> navigatorKey;
+
   @override
   _AppState createState() => _AppState();
 }
@@ -46,6 +51,7 @@ class _AppState extends State<App> {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      navigatorKey: widget.navigatorKey,
       home: Consumer<SettingProvider>(
         builder: (context, setting, child) => MaterialApp(
           theme: ThemeData(
