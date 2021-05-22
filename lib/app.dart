@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get_navigation/src/root/get_material_app.dart';
 import 'package:pos_ios_bvhn/provider/setting_provider.dart';
 import 'package:pos_ios_bvhn/sqflite/model/user_model_sqflite.dart';
 import 'package:pos_ios_bvhn/sqflite/user_sqflite.dart';
@@ -13,10 +14,6 @@ import 'package:provider/provider.dart';
 
 class App extends StatefulWidget {
 
-  App({Key key, this.navigatorKey}) : super(key: key);
-
-  final GlobalKey<NavigatorState> navigatorKey;
-
   @override
   _AppState createState() => _AppState();
 }
@@ -24,6 +21,8 @@ class App extends StatefulWidget {
 class _AppState extends State<App> {
 
   int cnt = 0;
+
+  final GlobalKey<NavigatorState> navigatorKey = new GlobalKey<NavigatorState>();
 
   @override
   void initState() {
@@ -49,9 +48,9 @@ class _AppState extends State<App> {
       DeviceOrientation.landscapeRight,
     ]);
 
-    return MaterialApp(
+    return GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      navigatorKey: widget.navigatorKey,
+      navigatorKey: navigatorKey,
       home: Consumer<SettingProvider>(
         builder: (context, setting, child) => MaterialApp(
           theme: ThemeData(

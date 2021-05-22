@@ -60,8 +60,6 @@ class RestaurantService {
           data: data,
           options: Options(method: 'POST')
       );
-      print(data);
-      print(response.data);
       return ResultModel.fromJson(response.data);
     } on DioError catch (e) {
       print("errors: ");
@@ -75,6 +73,7 @@ class RestaurantService {
           data: data,
           options: Options(method: 'PUT')
       );
+      print('data: ${data.toString()}');
       print(response.data);
       return ResultModel.fromJson(response.data);
     } on DioError catch (e) {

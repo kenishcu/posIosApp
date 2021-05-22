@@ -1,7 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:pos_ios_bvhn/app.dart';
+import 'package:pos_ios_bvhn/components/navigator_custom.dart';
 import 'package:pos_ios_bvhn/sqflite/user_sqflite.dart';
+import 'package:pos_ios_bvhn/ui/login/login_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../constants.dart';
@@ -11,6 +13,8 @@ import 'cache_interceptor.dart';
 class CustomDio extends Interceptor {
 
   Dio dio = new Dio();
+
+  NavigatorCustom navigatorCustom =  new NavigatorCustom();
 
   CustomDio() {
     // set up basic options header
@@ -45,32 +49,15 @@ class CustomDio extends Interceptor {
         },
         onError: (DioError err, ErrorInterceptorHandler handler) async {
           print('ERROR[${err.response?.statusCode}] => PATH: ${err.requestOptions?.path}');
-          if(err.response?.statusCode == 401 || err.response?.statusCode == 402) {
-            NavigatorState navigatorState = App().navigatorKey.currentState;
-            if (navigatorState != null) {
-              UserSqfLite userSqfLite = new UserSqfLite();
-              await userSqfLite.delete(1);
-              navigatorState.pushNamed('/');
-            }
+          if(err.message == 'HttpException: Failed to parse header value') {
+            UserSqfLite userSqfLite = new UserSqfLite();
+            await userSqfLite.delete(1);
+            navigatorCustom.toLogin();
           }
           return handler.next(err);
         }
       )
    );
-  }
-
-  Future<Response<dynamic>> _retry(RequestOptions requestOptions) async {
-    final options =  new Options(
-      method: requestOptions.method,
-      headers: requestOptions.headers
-    );
-
-    return this.dio.request<dynamic>(
-      requestOptions.path,
-      data: requestOptions.data,
-      queryParameters: requestOptions.queryParameters,
-      options: options
-    );
   }
 
 }

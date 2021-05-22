@@ -7,6 +7,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:pos_ios_bvhn/components/custom_grid_view.dart';
 import 'package:pos_ios_bvhn/components/custom_popup.dart';
 import 'package:pos_ios_bvhn/components/drawer.dart';
+import 'package:pos_ios_bvhn/components/drawer_category.dart';
 import 'package:pos_ios_bvhn/model/restaurant/category_meal_restaurant_model.dart';
 import 'package:pos_ios_bvhn/model/restaurant/category_restaurant_model.dart';
 import 'package:pos_ios_bvhn/model/restaurant/commission_restaurant_model.dart';
@@ -47,20 +48,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   bool selected = false;
 
-  bool groupPayment = false;
+  String receiver = "";
 
-  int _value;
+  String customer = "";
 
-  // tab controller
-  TabController _tabController;
+  List<ProductRestaurantModel> listProductView = [];
 
-  ScrollController _scrollController;
+  List<CategoryMealRestaurantModel> listCateBep = [];
 
-  List<bool> _canLoadMores = [];
+  List<CategoryMealRestaurantModel> listCateBar = [];
 
-  List<List<ProductRestaurantModel>> listTabsView = [];
+  List<CategoryMealRestaurantModel> listCateBanh = [];
 
-  List<List<CategoryMealRestaurantModel>> listTabsCategories = [];
+  List<CategoryMealRestaurantModel> categoriesMeal = [];
 
   List<TextEditingController> listTextController = [];
 
@@ -70,7 +70,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   final GlobalKey<AnimatedListState> listKey = GlobalKey<AnimatedListState>();
 
-  double _scrollPosition;
+  final GlobalKey<ScaffoldState> _scaffoldKey =  GlobalKey<ScaffoldState>();
 
   List<ItemProduct> _items = [];
 
@@ -130,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   final vnd = Currency.create('VND', 0, symbol: '₫');
 
   List<OrderPaymentTypeModel> paymentTypes = [
-    OrderPaymentTypeModel("Thanh toán cùng tiền phòng", 'ROOM'),
+    OrderPaymentTypeModel("Thanh toán khác", 'OTHER'),
     OrderPaymentTypeModel("Khách nợ", 'DEBT'),
     OrderPaymentTypeModel("Thanh toán thẻ", 'CREDIT_CARD'),
     OrderPaymentTypeModel("Miễn phí", 'FREE'),
@@ -219,11 +219,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     setState(() {
       _loading = true;
-      dropdownPaymentTypeValue = paymentTypes.first;
+      // dropdownPaymentTypeValue = paymentTypes.first;
     });
-
-    _scrollController = ScrollController();
-    _scrollController.addListener(_scrollListener);
 
     fToast = FToast();
     fToast.init(context);
@@ -236,8 +233,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   @override
   void dispose() {
-    _tabController.dispose();
-    _scrollController.dispose();
 
     noteController.dispose();
     priceController.dispose();
@@ -269,342 +264,63 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     String branchId = Provider.of<SettingProvider>(context, listen: false).userInfo.branchId;
 
-    _tabController = TabController(length: categories.length, vsync: this);
+    ResultModel resProduct = await restaurantService.getProductsByParams(branchId , '', '', "", 1, 50);
 
-    CategoryMealRestaurantModel cateAll = new CategoryMealRestaurantModel(
-        "", "", "All", 1, 0, 0
-    );
+    if(resProduct.status && resProduct.data != null && resProduct.data.length > 0) {
+      List<ProductRestaurantModel> products = [];
 
-    categories.forEach((element) async {
-
-      _canLoadMores.add(false);
-      if(element.categoryCode == "tat_ca") {
-        ResultModel resCategories = await restaurantService.getCategoryRestaurantByParams(branchId, '', '', 1);
-        if(resCategories.status && resCategories.data != null && resCategories.data.length > 0) {
-          List<CategoryMealRestaurantModel> categories = [];
-          setState(() {
-            categories.add(cateAll);
-          });
-          for(int i = 0; i < resCategories.data.length - 1; i++) {
-            setState(() {
-              CategoryMealRestaurantModel category = CategoryMealRestaurantModel.fromJson(resCategories.data[i]);
-              categories.add(category);
-            });
-          }
-          setState(() {
-            if (listTabsCategories.length >= 1) {
-              listTabsCategories.insert(0, categories);
-            } else {
-              listTabsCategories.add(categories);
-            }
-          });
-        } else {
-          setState(() {
-            listTabsCategories.add([cateAll]);
-          });
-        }
-
-        TextEditingController _nodeController = new TextEditingController();
+      for (int i = 0; i < resProduct.data.length; i++) {
         setState(() {
-          listTextController.add(_nodeController);
-        });
-
-        // get all products
-        ResultModel resProduct = await restaurantService.getProductsByParams(branchId , '', '', "", 1, 20);
-
-        if(resProduct.status && resProduct.data != null && resProduct.data.length > 0) {
-          List<ProductRestaurantModel> products = [];
-
-          for(int i = 0; i < resProduct.data.length; i++) {
-            setState(() {
-              ProductRestaurantModel product = ProductRestaurantModel.fromJson(resProduct.data[i]);
-              // if(product.status == 1) {
-              //   products.add(ProductRestaurantModel.fromJson(resProduct.data[i]));
-              // }
-              products.add(ProductRestaurantModel.fromJson(resProduct.data[i]));
-            });
-          }
-          setState(() {
-            List<ProductRestaurantModel> pro = products;
-
-            if(listTabsView.length >= 1) {
-              listTabsView.insert(0, pro);
-            } else {
-              listTabsView.add(pro);
-            }
-          });
-        } else {
-          setState(() {
-            if(listTabsView.length >= 1) {
-              listTabsView.insert(0, []);
-            } else {
-              listTabsView.add([]);
-            }
-          });
-        }
-      } else if(element.categoryCode == "nha_bep") {
-
-        ResultModel resCategories = await restaurantService.getCategoryRestaurantByParams(branchId, '1050100000000000000', '', 1);
-        if(resCategories.status && resCategories.data != null && resCategories.data.length > 0) {
-          List<CategoryMealRestaurantModel> categories = [];
-          setState(() {
-            categories.add(cateAll);
-          });
-          for(int i = 0; i < resCategories.data.length - 1; i++) {
-            setState(() {
-              CategoryMealRestaurantModel category = CategoryMealRestaurantModel.fromJson(resCategories.data[i]);
-              categories.add(category);
-            });
-          }
-          setState(() {
-            if (listTabsCategories.length >= 2) {
-              listTabsCategories.insert(1, categories);
-            } else {
-              listTabsCategories.add(categories);
-            }
-          });
-        } else {
-          setState(() {
-            listTabsCategories.add([cateAll]);
-          });
-        }
-
-        TextEditingController _nodeController = new TextEditingController();
-        setState(() {
-          listTextController.add(_nodeController);
-        });
-
-        // get all products
-        ResultModel resProduct = await restaurantService.getProductsByParams(branchId , "1050100000000000000", '', "", 1, 20);
-
-        if(resProduct.status && resProduct.data != null && resProduct.data.length > 0) {
-          List<ProductRestaurantModel> products = [];
-
-          for(int i = 0; i < resProduct.data.length; i++) {
-            setState(() {
-              ProductRestaurantModel product = ProductRestaurantModel.fromJson(resProduct.data[i]);
-              // if(product.status == 1) {
-              //   products.add(ProductRestaurantModel.fromJson(resProduct.data[i]));
-              // }
-              products.add(ProductRestaurantModel.fromJson(resProduct.data[i]));
-            });
-          }
-          setState(() {
-            List<ProductRestaurantModel> pro = products;
-
-            if(listTabsView.length >= 2) {
-              listTabsView.insert(1, pro);
-            } else {
-              listTabsView.add(pro);
-            }
-          });
-        } else {
-          setState(() {
-            if(listTabsView.length >= 2) {
-              listTabsView.insert(1, []);
-            } else {
-              listTabsView.add([]);
-            }
-          });
-        }
-
-      } else if(element.categoryCode == "quay_bar") {
-
-        ResultModel resCategories = await restaurantService.getCategoryRestaurantByParams(branchId, '1050600000000000000', '', 1);
-        if(resCategories.status && resCategories.data != null && resCategories.data.length > 0) {
-          List<CategoryMealRestaurantModel> categories = [];
-          setState(() {
-            categories.add(cateAll);
-          });
-          for(int i = 0; i < resCategories.data.length - 1; i++) {
-            setState(() {
-              CategoryMealRestaurantModel category = CategoryMealRestaurantModel.fromJson(resCategories.data[i]);
-              categories.add(category);
-            });
-          }
-          setState(() {
-            if(listTabsCategories.length >= 3) {
-              listTabsCategories.insert(2, categories);
-            } else {
-              listTabsCategories.add(categories);
-            }
-          });
-        } else {
-          setState(() {
-            listTabsCategories.add([cateAll]);
-          });
-        }
-
-        TextEditingController _nodeController = new TextEditingController();
-
-        setState(() {
-          listTextController.add(_nodeController);
-        });
-
-        // get all products
-        ResultModel resProduct = await restaurantService.getProductsByParams(branchId , '1050600000000000000', '', "", 1, 20);
-
-        if(resProduct.status && resProduct.data != null && resProduct.data.length > 0) {
-          List<ProductRestaurantModel> products = [];
-
-          for(int i = 0; i < resProduct.data.length; i++) {
-            setState(() {
-              // ProductRestaurantModel product = ProductRestaurantModel.fromJson(resProduct.data[i]);
-              // if(product.status == 1) {
-              //   products.add(ProductRestaurantModel.fromJson(resProduct.data[i]));
-              // }
-              products.add(ProductRestaurantModel.fromJson(resProduct.data[i]));
-            });
-          }
-          setState(() {
-            List<ProductRestaurantModel> pro = products;
-
-            if(listTabsView.length >= 3) {
-              listTabsView.insert(2, pro);
-            } else {
-              listTabsView.add(pro);
-            }
-          });
-        } else {
-          setState(() {
-            if(listTabsView.length >= 3) {
-              listTabsView.insert(2, []);
-            } else {
-              listTabsView.add([]);
-            }
-          });
-        }
-
-      } else if(element.categoryCode == "quay_banh") {
-
-        ResultModel resCategories = await restaurantService.getCategoryRestaurantByParams(branchId, '1050800000000000000', '', 1);
-        if(resCategories.status && resCategories.data != null && resCategories.data.length > 0) {
-          List<CategoryMealRestaurantModel> categories = [];
-          setState(() {
-            categories.add(cateAll);
-          });
-          for(int i = 0; i < resCategories.data.length - 1; i++) {
-            setState(() {
-              CategoryMealRestaurantModel category = CategoryMealRestaurantModel.fromJson(resCategories.data[i]);
-              categories.add(category);
-            });
-          }
-          setState(() {
-            if (listTabsCategories.length >= 4) {
-              listTabsCategories.insert(3, categories);
-            } else {
-              listTabsCategories.add(categories);
-            }
-          });
-        } else {
-          setState(() {
-            listTabsCategories.add([cateAll]);
-          });
-        }
-
-        TextEditingController _nodeController = new TextEditingController();
-
-        setState(() {
-          listTextController.add(_nodeController);
-        });
-
-        // get all products
-        ResultModel resProduct = await restaurantService.getProductsByParams(branchId , element.categoryId, '', "", 1, 20);
-        if(resProduct.status && resProduct.data != null && resProduct.data.length > 0) {
-          List<ProductRestaurantModel> products = [];
-
-          for(int i = 0; i < resProduct.data.length; i++) {
-            setState(() {
-              ProductRestaurantModel product = ProductRestaurantModel.fromJson(resProduct.data[i]);
-              // if(product.status == 1) {
-              //   products.add(ProductRestaurantModel.fromJson(resProduct.data[i]));
-              // }
-              products.add(ProductRestaurantModel.fromJson(resProduct.data[i]));
-            });
-          }
-          List<ProductRestaurantModel> pro = products;
-
-          if(listTabsView.length >= 4) {
-            listTabsView.insert(3, pro);
-          } else {
-            listTabsView.add(pro);
-          }
-          setState(() {});
-        } else {
-          if(listTabsView.length >= 4) {
-            listTabsView.insert(3, []);
-          } else {
-            listTabsView.add([]);
-          }
-          setState(() {});
-        }
-
-      } else {
-
-        ResultModel resCategories = await restaurantService.getCategoryRestaurantByParams(branchId, element.categoryId, '', 1);
-        if(resCategories.status && resCategories.data != null && resCategories.data.length > 0) {
-          List<CategoryMealRestaurantModel> categories = [];
-          setState(() {
-            categories.add(cateAll);
-          });
-          for(int i = 0; i < resCategories.data.length - 1; i++) {
-            setState(() {
-              CategoryMealRestaurantModel category = CategoryMealRestaurantModel.fromJson(resCategories.data[i]);
-              if(category.status == 1) {
-                categories.add(category);
-              }
-            });
-          }
-          listTabsCategories.add(categories);
-        } else {
-          listTabsCategories.add([cateAll]);
-        }
-
-        TextEditingController _nodeController = new TextEditingController();
-
-        listTextController.add(_nodeController);
-
-        // get all products
-        ResultModel resProduct = await restaurantService.getProductsByParams(branchId , element.categoryId, '', "", 1, 20);
-
-        if(resProduct.status && resProduct.data != null && resProduct.data.length > 0) {
-          List<ProductRestaurantModel> products = [];
-
-          for(int i = 0; i < resProduct.data.length; i++) {
-            setState(() {
-              ProductRestaurantModel product = ProductRestaurantModel.fromJson(resProduct.data[i]);
-              // if(product.status == 1) {
-              //   products.add(ProductRestaurantModel.fromJson(resProduct.data[i]));
-              // }
-              products.add(ProductRestaurantModel.fromJson(resProduct.data[i]));
-            });
-          }
-          List<ProductRestaurantModel> pro = products;
-          listTabsView.add(pro);
-          setState(() {});
-        } else {
-          listTabsView.add([]);
-          setState(() {});
-        }
-
-        setState(() {
-          listWidget.add(new Container(
-            height: 60,
-            decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10)
-            ),
-            child:  Align(
-              alignment: Alignment.center,
-              child: Text( element.categoryName, style: TextStyle(
-                  color: PrimaryGreyColor,
-                  fontSize: 18
-              )),
-            ),
-          ));
+          products.add(ProductRestaurantModel.fromJson(resProduct.data[i]));
         });
       }
+      setState(() {
+        listProductView = products;
+      });
+    }
 
-    });
+    ResultModel resCategoriesBep = await restaurantService.getCategoryRestaurantByParams(branchId, '1050100000000000000', '', 1);
+    if(resCategoriesBep.status && resCategoriesBep.data != null && resCategoriesBep.data.length > 0) {
+      List<CategoryMealRestaurantModel> categoriesBep = [];
+      for(int i = 0; i < resCategoriesBep.data.length; i++) {
+        setState(() {
+          CategoryMealRestaurantModel category = CategoryMealRestaurantModel.fromJson(resCategoriesBep.data[i]);
+          categoriesBep.add(category);
+        });
+      }
+      setState(() {
+        listCateBep = categoriesBep;
+      });
+    }
+
+    ResultModel resCategoriesBar = await restaurantService.getCategoryRestaurantByParams(branchId, '1050600000000000000', '', 1);
+    if(resCategoriesBar.status && resCategoriesBar.data != null && resCategoriesBar.data.length > 0) {
+      List<CategoryMealRestaurantModel> categoriesBar = [];
+      for(int i = 0; i < resCategoriesBar.data.length; i++) {
+        setState(() {
+          CategoryMealRestaurantModel category = CategoryMealRestaurantModel.fromJson(resCategoriesBar.data[i]);
+          categoriesBar.add(category);
+        });
+      }
+      setState(() {
+        listCateBar = categoriesBar;
+      });
+    }
+
+    ResultModel resCategoriesBanh = await restaurantService.getCategoryRestaurantByParams(branchId, '1050800000000000000', '', 1);
+    if(resCategoriesBanh.status && resCategoriesBanh.data != null && resCategoriesBanh.data.length > 0) {
+      List<CategoryMealRestaurantModel> categoriesBanh = [];
+      for(int i = 0; i < resCategoriesBanh.data.length; i++) {
+        setState(() {
+          CategoryMealRestaurantModel category = CategoryMealRestaurantModel.fromJson(resCategoriesBanh.data[i]);
+          categoriesBanh.add(category);
+        });
+      }
+      setState(() {
+        listCateBanh = categoriesBanh;
+      });
+    }
+
     var future = new Future.delayed(const Duration(milliseconds: 1000), () {
       setState(() {
         _loading = false;
@@ -1310,7 +1026,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                               children: [
                                                 Container(
                                                   height: 50,
-                                                  width: 500,
+                                                  width: 520,
                                                   child: TextFormField(
                                                     obscureText: false,
                                                     controller: customerController,
@@ -1353,12 +1069,30 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                                           onChange: (PartnerCustomer selected) {
                                                             setState(() {
                                                               ex1 = selected;
-                                                              _order.commissionRestaurantModel.customerName = selected.partnerCustomerName;
                                                               customerController.text = selected.partnerCustomerName;
                                                             });
                                                           }
                                                       );
                                                     },
+                                                  ),
+                                                ),
+                                                Container(
+                                                  height: 45,
+                                                  width: 45,
+                                                  margin: EdgeInsets.only(bottom: 5,right: 5),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.red
+                                                  ),
+                                                  child: TextButton(
+                                                    onPressed: () {
+                                                      setState(() {
+                                                        customerController.text = "";
+                                                      });
+                                                    },
+                                                    child: Icon(
+                                                      Icons.close,
+                                                      color: Colors.white,
+                                                    ),
                                                   ),
                                                 )
                                               ],
@@ -1385,6 +1119,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                         int c = commissionController != null && commissionController.text != "" ? int.parse(commissionController.text) : 0;
                                         _commission.rosesPercent = c;
                                         _commission.rosesNote = noteCommissionController.text;
+
+                                        _order.commissionRestaurantModel = _commission;
                                       });
                                       Navigator.pop(context);
                                     },
@@ -1538,7 +1274,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               backgroundColor: Colors.transparent,
               insetPadding: EdgeInsets.all(10.0),
               child: Container(
-                height: size.height * 0.4,
+                height: size.height * 0.45,
                 width: size.width * 0.5, decoration: BoxDecoration(
                   color: Colors.white
                 ),
@@ -1571,7 +1307,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             )),
                       ),
                     ),
-                    CustomPopup(callback: (val, val2) => setState( () => {dropdownPaymentTypeValue = val, groupPayment = val2})),
+                    CustomPopup(customer: _order.commissionRestaurantModel.customerName ,
+                        receiver : _order.commissionRestaurantModel.receiveName,
+                        callback: (val, val2, val3) => setState( () => {dropdownPaymentTypeValue = val, receiver = val2, customer = val3})),
                     Container(
                       height: 60,
                       width: 150,
@@ -1582,19 +1320,40 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       ),
                       child: TextButton(
                         onPressed: () async {
-                          if(dropdownPaymentTypeValue != null && dropdownPaymentTypeValue.value == "OTHER") {
+                          if(dropdownPaymentTypeValue != null && dropdownPaymentTypeValue.value != "OTHER") {
                             if (_items.length < 1) {
                               Navigator.pop(context);
                               _showToastError("Vui lòng chọn đồ để đặt." );
                               return;
                             }
+                            if((dropdownPaymentTypeValue.value == "FREE") && (customer == null || customer.isEmpty)) {
+                              _showToastError("Vui lòng chọn khách hàng." );
+                              return;
+                            }
+                            if((dropdownPaymentTypeValue.value == "DEBT") && (receiver == null || receiver.isEmpty)) {
+                              _showToastError("Vui lòng điền người nhận." );
+                              return;
+                            }
+
+                            if(dropdownPaymentTypeValue.value == "FREE") {
+                              setState(() {
+                                _order.commissionRestaurantModel.customerName = customer;
+                              });
+                            }
+
+                            if(dropdownPaymentTypeValue.value == "DEBT") {
+                              setState(() {
+                                _order.commissionRestaurantModel.receiveName = receiver;
+                              });
+                            }
+
                             if(this._order.reservationId != null) {
                               //TODO: controls the order got bill
                               List<ProductOrderModel> list = [];
                               _items.forEach((element) {
                                 ProductOrderModel pro = element.product;
                                 if (element.product.status == "PRE-CANCELLED") {
-                                  pro.status = "CANCELLED";
+                                  pro.status = "CANCEL";
                                 }
                                 pro.quantity = element.number;
                                 list.add(pro);
@@ -1603,8 +1362,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
                               _order.products = list;
                               _order.usedAt = timeOrder;
-                              groupPayment ? _order.groupPayment = 1 : _order.groupPayment = 0;
-                              _order.paymentResult = "ROOM";
+                              // groupPayment ? _order.groupPayment = 1 : _order.groupPayment = 0;
+                              _order.paymentResult = dropdownPaymentTypeValue.value;
                               _order.status = "CHECKOUT";
 
                               // TODO: Order
@@ -1631,7 +1390,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               _items.forEach((element) {
                                 ProductOrderModel pro = element.product;
                                 if (element.product.status == "PRE-CANCELLED") {
-                                  pro.status = "CANCELLED";
+                                  pro.status = "CANCEL";
                                 }
                                 pro.quantity = element.number;
                                 list.add(pro);
@@ -1641,8 +1400,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
                               _order.usedAt = timeOrder;
                               _order.status = "CHECKOUT";
-                              groupPayment ? _order.groupPayment = 1 : _order.groupPayment = 0;
-                              _order.paymentResult = "ROOM";
+                              _order.paymentResult = dropdownPaymentTypeValue.value;
                               _order.products = list;
                               _order.tableInfo = widget.table;
 
@@ -1667,12 +1425,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               _showToastError("Vui lòng chọn đồ để đặt." );
                               return;
                             }
-                            if(_order.commissionRestaurantModel.customerName == null || _order.commissionRestaurantModel.customerName.isEmpty) {
-                              Navigator.pop(context);
-                              _showToastError("Vui lòng chọn khách hàng." );
-                              return;
-                            }
-
+                            setState(() {
+                              dropdownPaymentTypeValue = paymentTypes.first;
+                            });
                             await _showOtherPayment();
                           }
                         },
@@ -1692,10 +1447,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     Size size = MediaQuery.of(context).size;
 
-    setState(() {
-
-    });
-
     int _total = 0;
 
     int _totalEdit = 0;
@@ -1713,6 +1464,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       });
     }
 
+    int fee = _order != null && _order.serviceCharge != null && _order.serviceCharge != 0 ? _order.serviceCharge:
+    _order != null && _order.serviceChargeRate != null && _order.serviceChargeRate != 0 ? (_order.serviceChargeRate * _total / 100).round()  : 0;
+
+    int _totalAfterFee =  _total + fee;
+
+
+    int tax = _order != null && _order.tax != null && _order.tax != 0 ? (_order.tax) :
+    _order != null &&  _order.taxRate != null && _order.taxRate != 0 ? ((_order.taxRate) * _totalAfterFee / 100).round() : 0;
+
+    int _totalAfterFeeAndTax = roundNumber(_totalAfterFee + tax);
+
     setState(() {
       roomPaymentController.text = "";
       debitPaymentController.text = "";
@@ -1723,8 +1485,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       cashPaymentController.text = "";
       tipPaymentController.text = "";
       totalPaymentController.text = _totalEdit.toString();
-      totalBillPaymentController.text = _total.toString();
-      differentTotalBillPaymentController.text = (_total - _totalEdit).toString();
+      totalBillPaymentController.text = _totalAfterFeeAndTax.toString();
+      differentTotalBillPaymentController.text = (_totalAfterFeeAndTax - _totalEdit).toString();
     });
 
     return showDialog<void>(
@@ -1735,8 +1497,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               backgroundColor: Colors.transparent,
               insetPadding: EdgeInsets.all(10.0),
               child: Container(
-                width: size.width * 0.6,
-                height: size.height * 0.9,
+                width: size.width * 0.8,
+                height: size.height * 0.7,
                 decoration: BoxDecoration(
                   color: Colors.white
                 ),
@@ -1748,13 +1510,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       children: [
                         Container(
                             height: size.height * 0.1,
-                            width: size.width * 0.6,
+                            width: size.width * 0.8,
                             decoration: BoxDecoration(
                                 color: PrimaryGreenColor
                             ),
                             child: Padding(
                               padding: EdgeInsets.only(top: 20, left: 20),
-                              child: Text("THANH TOÁN TỔNG HỢP", style: TextStyle(
+                              child: Text("THANH TOÁN KHÁC", style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 24
                               )),
@@ -1779,7 +1541,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               ),
                               Container(
                                 height: size.height * 0.05,
-                                width: size.width * 0.4 - 10,
+                                width: size.width * 0.2 - 10,
                                 decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(5.0),
                                     border: Border.all()
@@ -1801,18 +1563,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                       border: InputBorder.none
                                   ),
                                 ),
-                              )
-                            ],
-                          ),
-                        ),
-                        Container(
-                          margin: EdgeInsets.only(top: 10, right: 10),
-                          height: size.height * 0.05,
-                          child: Row(
-                            children: [
+                              ),
                               Container(
                                   height: size.height * 0.05,
-                                  width: size.width * 0.2,
+                                  width: size.width * 0.15,
+                                  margin: EdgeInsets.only(left: 0.04 * size.width),
                                   child: Padding(
                                     padding: EdgeInsets.only(
                                         top: 5, left: 10
@@ -1824,7 +1579,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               ),
                               Container(
                                 height: size.height * 0.05,
-                                width: size.width * 0.4 - 10,
+                                width: size.width * 0.2 - 10,
                                 decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(5.0),
                                     border: Border.all()
@@ -1857,7 +1612,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             children: [
                               Container(
                                   height: size.height * 0.05,
-                                  width: size.width * 0.2,
+                                  width: size.width * 0.15 + 10,
                                   child: Padding(
                                     padding: EdgeInsets.only(
                                         top: 5, left: 10
@@ -1869,7 +1624,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               ),
                               Container(
                                 height: size.height * 0.05,
-                                width: size.width * 0.4 - 10,
+                                width: size.width * 0.2 - 10,
+                                margin: EdgeInsets.only(left: 0.04 * size.width),
                                 decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(5.0),
                                     border: Border.all()
@@ -1891,18 +1647,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                       border: InputBorder.none
                                   ),
                                 ),
-                              )
-                            ],
-                          ),
-                        ),
-                        Container(
-                          margin: EdgeInsets.only(top: 10, right: 10),
-                          height: size.height * 0.05,
-                          child: Row(
-                            children: [
+                              ),
                               Container(
                                   height: size.height * 0.05,
-                                  width: size.width * 0.2,
+                                  width: size.width * 0.15,
+                                  margin: EdgeInsets.only(left: 0.04 * size.width),
                                   child: Padding(
                                     padding: EdgeInsets.only(
                                         top: 5, left: 10
@@ -1914,7 +1663,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               ),
                               Container(
                                 height: size.height * 0.05,
-                                width: size.width * 0.4 - 10,
+                                width: size.width * 0.2 - 10,
                                 decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(5.0),
                                     border: Border.all()
@@ -1959,7 +1708,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               ),
                               Container(
                                 height: size.height * 0.05,
-                                width: size.width * 0.4 - 10,
+                                width: size.width * 0.2 - 10,
                                 decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(5.0),
                                     border: Border.all()
@@ -1981,18 +1730,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                       border: InputBorder.none
                                   ),
                                 ),
-                              )
-                            ],
-                          ),
-                        ),
-                        Container(
-                          margin: EdgeInsets.only(top: 10, right: 10),
-                          height: size.height * 0.05,
-                          child: Row(
-                            children: [
+                              ),
                               Container(
                                   height: size.height * 0.05,
-                                  width: size.width * 0.2,
+                                  width: size.width * 0.15,
+                                  margin: EdgeInsets.only(left: size.width * 0.04),
                                   child: Padding(
                                     padding: EdgeInsets.only(
                                         top: 5, left: 10
@@ -2004,7 +1746,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               ),
                               Container(
                                 height: size.height * 0.05,
-                                width: size.width * 0.4 - 10,
+                                width: size.width * 0.2 - 10,
                                 decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(5.0),
                                     border: Border.all()
@@ -2049,7 +1791,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               ),
                               Container(
                                 height: size.height * 0.05,
-                                width: size.width * 0.4 - 10,
+                                width: size.width * 0.2 - 10,
                                 decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(5.0),
                                     border: Border.all()
@@ -2071,18 +1813,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                       border: InputBorder.none
                                   ),
                                 ),
-                              )
-                            ],
-                          ),
-                        ),
-                        Container(
-                          margin: EdgeInsets.only(top: 10, right: 10),
-                          height: size.height * 0.05,
-                          child: Row(
-                            children: [
+                              ),
                               Container(
                                   height: size.height * 0.05,
-                                  width: size.width * 0.2,
+                                  width: size.width * 0.15,
+                                  margin: EdgeInsets.only(left: size.width * 0.04),
                                   child: Padding(
                                     padding: EdgeInsets.only(
                                         top: 5, left: 10
@@ -2094,7 +1829,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               ),
                               Container(
                                 height: size.height * 0.05,
-                                width: size.width * 0.4 - 10,
+                                width: size.width * 0.2 - 10,
                                 decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(5.0),
                                     border: Border.all()
@@ -2147,6 +1882,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 child: TextFormField(
                                   controller: totalPaymentController,
                                   style: style,
+                                  enabled: false,
                                   decoration: InputDecoration(
                                       hintText: "0",
                                       enabled: false,
@@ -2190,6 +1926,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 child: TextFormField(
                                   controller: totalBillPaymentController,
                                   style: style,
+                                  enabled: false,
                                   decoration: InputDecoration(
                                       hintText: "0",
                                       contentPadding: EdgeInsets.only(left: 10,bottom: 10),
@@ -2232,6 +1969,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 child: TextFormField(
                                   controller: differentTotalBillPaymentController,
                                   style: style,
+                                  enabled: false,
                                   decoration: InputDecoration(
                                       hintText: "0",
                                       contentPadding: EdgeInsets.only(left: 10,bottom: 10),
@@ -2248,7 +1986,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           ),
                         ),
                         Container(
-                            height: size.height * 0.1,
+                          height: 0.05 * size.height,
+                          width: size.width * 0.8,
+                        ),
+                        Container(
+                            height: size.height * 0.05,
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
@@ -2285,7 +2027,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                           _items.forEach((element) {
                                             ProductOrderModel pro = element.product;
                                             if (element.product.status == "PRE-CANCELLED") {
-                                              pro.status = "CANCELLED";
+                                              pro.status = "CANCEL";
                                             }
                                             pro.quantity = element.number;
                                             list.add(pro);
@@ -2305,7 +2047,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                           _order.paymentOtherModel.tip = int.parse(tipPaymentController.text.isEmpty ? "0" : tipPaymentController.text);
                                           _order.paymentResult = dropdownPaymentTypeValue.value;
                                           _order.status = "CHECKOUT";
-
+                                          int totalEditing = _order.paymentOtherModel.room + _order.paymentOtherModel.debit + _order.paymentOtherModel.card
+                                                           + _order.paymentOtherModel.free + _order.paymentOtherModel.bank + _order.paymentOtherModel.voucher
+                                                           + _order.paymentOtherModel.cash;
+                                          if(totalEditing != _total) {
+                                            _showToastError("Đặt đồ không thành công." );
+                                            return;
+                                          }
                                           // TODO: Order
                                           setState(() {
                                             _isLoading = true;
@@ -2319,7 +2067,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                             );
 
                                           } else {
-                                            _showToastError("Đặt đồ không thành công." );
+                                            _showToastError("Tổng tiền không khớp với hoá đơn !");
                                           }
                                           setState(() {
                                             _isLoading = false;
@@ -2330,7 +2078,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                           _items.forEach((element) {
                                             ProductOrderModel pro = element.product;
                                             if (element.product.status == "PRE-CANCELLED") {
-                                              pro.status = "CANCELLED";
+                                              pro.status = "CANCEL";
                                             }
                                             pro.quantity = element.number;
                                             list.add(pro);
@@ -2352,6 +2100,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                           _order.paymentOtherModel.tip = int.parse(tipPaymentController.text == "" ? "0" : tipPaymentController.text);
                                           _order.products = list;
                                           _order.tableInfo = widget.table;
+
+                                          int totalEditing = _order.paymentOtherModel.room + _order.paymentOtherModel.debit + _order.paymentOtherModel.card
+                                              + _order.paymentOtherModel.free + _order.paymentOtherModel.bank + _order.paymentOtherModel.voucher
+                                              + _order.paymentOtherModel.cash;
+                                          if(totalEditing != _total) {
+                                            _showToastError("Tổng tiền không khớp với hoá đơn !" );
+                                            return;
+                                          }
 
                                           // TODO: Order
                                           setState(() {
@@ -2422,14 +2178,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     });
   }
 
-  _scrollListener() {
-    setState(() {
-      _scrollPosition = _scrollController.position.pixels;
-    });
-  }
-
   // TODO: build widget for view in every tab bar
-  Widget _buildAnyWidgets(BuildContext context, i) {
+  Widget _buildAnyWidgets(BuildContext context) {
 
     Size size = MediaQuery.of(context).size;
 
@@ -2441,154 +2191,36 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             child: Row(
               children: [
                 Container(
-                  height: 40,
-                  width: size.width * 0.5,
-                  margin: EdgeInsets.all(10),
+                  height: 50,
+                  width: size.width * 0.6,
+                  margin: EdgeInsets.only(top: 20, left: 10, right: 10),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: Colors.black, width: 0.2),
                   ),
                   child: TextField(
-                    controller: i < listTextController.length - 1 && listTextController[i] != null ? listTextController[i] : _nodeTextController,
+                    controller: _nodeTextController,
                     decoration: const InputDecoration(
                       filled: true,
                       hintText: 'Tìm kiếm',
                       border: InputBorder.none,
                       hintStyle: TextStyle(
-                        fontSize: 15,
+                        fontSize: 20,
                         color: CupertinoColors.systemGrey,
                         fontWeight: FontWeight.normal
                       ),
                     ),
-                    onChanged: (value) => _searchItems(value, i),
+                    onChanged: (value) => _searchItems(value),
                   ),
                 ),
-                Container(
-                  height: 40,
-                  width: 45,
-                  margin: EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(5),
-                    border: Border.all(color: Colors.black, width: 2.0),
-//                    color: kGreen,
-                  ),
-                  child: TextButton(
-                    onPressed: () {
-                      setState(() {
-                        selected = !selected;
-                      });
-                    },
-                    child: Padding(
-                      padding: EdgeInsets.only(left: 0),
-                      child: selected ? Icon(
-                        Icons.remove,
-                        color: Colors.black,
-                      ):  Icon(
-                        Icons.add,
-                        color: Colors.black,
-                      ),
-                    )
-                  ),
-                )
               ],
             ),
           ),
-          AnimatedContainer(
-            width: selected ? size.width * 0.7 : 0.0,
-            height: selected ? 50.0 : 0.0,
-            duration: Duration(seconds: 1),
-            padding: EdgeInsets.all(5),
-            curve: Curves.fastOutSlowIn,
-            child: Container(
-              child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    listTabsCategories != null && listTabsCategories.length > 0 && i < listTabsCategories.length != null ? Container(
-                      margin: EdgeInsets.only(top: 5, right: 10),
-                      height: 40,
-                      width: 50,
-                      decoration: BoxDecoration(
-                          border: Border.all(
-                              color: PrimaryGreenLightColor
-                          )
-                      ),
-                      child: TextButton(
-                        onPressed: () {
-                          setState(() {
-                            _scrollController.animateTo(_scrollPosition <= 400 ? 0 : _scrollPosition - 400, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
-                          });
-                        },
-                        style: TextButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              minimumSize: Size(50, 30),
-                              alignment: Alignment.center),
-                        child: Icon(
-                          Icons.keyboard_arrow_left,
-                          size: 30,
-                          color: PrimaryGreenLightColor,
-                        ),
-                      ),
-                    ) : Container(),
-                    listTabsCategories != null && listTabsCategories.length > 0 && i < listTabsCategories.length != null ? Expanded (
-                      child: ListView.builder(
-                          controller: _scrollController,
-                          shrinkWrap: true,
-                          scrollDirection: Axis.horizontal,
-                          itemCount:  listTabsCategories[i].length,
-                          itemBuilder: (BuildContext context, int index) => Container(
-                            margin: EdgeInsets.only(right: 10),
-                            child: ChoiceChip(
-                              label: Text(listTabsCategories[i][index].categoryName),
-                              selected: _value == index,
-                              onSelected: (bool selected) {
-                                setState(() {
-                                  _value = selected ? index : null;
-                                  _updateProductions(i, listTabsCategories[i][index].categoryId);
-                                  setState(() {
-                                    selectedCategoryMealRestaurant = listTabsCategories[i][index];
-                                  });
-                                });
-                              },
-
-                            ),
-                          )),
-                    ) : Container(),
-                    listTabsCategories != null && listTabsCategories.length > 0 && i < listTabsCategories.length != null ? Container(
-                      margin: EdgeInsets.only(top: 5, left: 10),
-                      height: 40,
-                      width: 50,
-                      decoration: BoxDecoration(
-                          border: Border.all(
-                              color: PrimaryGreenLightColor
-                          )
-                      ),
-                      child: TextButton(
-                        onPressed: () {
-                          setState(() {
-                            _scrollController.animateTo(_scrollPosition != null  ? _scrollPosition + 400 : 400, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
-                          });
-                        },
-                        style: TextButton.styleFrom(
-                            padding: EdgeInsets.zero,
-                            minimumSize: Size(50, 30),
-                            alignment: Alignment.center),
-                        child: Icon(
-                          Icons.keyboard_arrow_right,
-                          size: 30,
-                          color: PrimaryGreenLightColor,
-                        ),
-                      ),
-                    ) : Container(),
-                  ]
-              ),
-            ),
-          ),
-          AnimatedContainer(
+          listProductView.length > 0 ? AnimatedContainer(
               duration: Duration(seconds: 1),
               curve: Curves.fastOutSlowIn,
-              height: selected ? size.height - 242 : size.height - 204,
+              height: size.height - 170,
               margin: EdgeInsets.only(top: 10),
               width: size.width * 0.7,
               decoration: BoxDecoration(
@@ -2638,19 +2270,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                         onPressed: () {
                                           setState(() {
                                             int cnt;
-                                            ProductOrderModel productOrder = new ProductOrderModel(listTabsView[i][index].id,
-                                                listTabsView[i][index].productCode, listTabsView[i][index].productName,
-                                                listTabsView[i][index].categoryParentId, listTabsView[i][index].categoryParentCode,
-                                                listTabsView[i][index].categoryParentName, listTabsView[i][index].categoryId,
-                                                listTabsView[i][index].categoryCode, listTabsView[i][index].categoryName,
-                                                "CHECKIN",  listTabsView[i][index].price,  listTabsView[i][index].imageUrl,
-                                                listTabsView[i][index].combo,  listTabsView[i][index].categoryStatus,
-                                                listTabsView[i][index].supplies,  listTabsView[i][index].unitCode,
-                                                listTabsView[i][index].unitId, listTabsView[i][index].unitName,
-                                                listTabsView[i][index].unitStatus, 0 , '', 0, 0, false, "", 1);
+                                            ProductOrderModel productOrder = new ProductOrderModel(listProductView[index].id,
+                                                listProductView[index].productCode, listProductView[index].productName,
+                                                listProductView[index].categoryParentId, listProductView[index].categoryParentCode,
+                                                listProductView[index].categoryParentName, listProductView[index].categoryId,
+                                                listProductView[index].categoryCode, listProductView[index].categoryName,
+                                                "CHECKIN",  listProductView[index].price,  listProductView[index].imageUrl,
+                                                listProductView[index].combo,  listProductView[index].categoryStatus,
+                                                listProductView[index].supplies,  listProductView[index].unitCode,
+                                                listProductView[index].unitId, listProductView[index].unitName,
+                                                listProductView[index].unitStatus, 0 , '', 0, 0, false, "", 1);
                                             if( _items != null && _items.length > 0) {
                                               for(int j = 0; j< _items.length; j++) {
-                                                if(listTabsView[i][index].id.toString() == _items[j].id.toString()
+                                                if(listProductView[index].id.toString() == _items[j].id.toString()
                                                  && _items[j].product.status == "CHECKIN") {
                                                   cnt = j;
                                                 }
@@ -2659,7 +2291,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                                 listKey.currentState.insertItem(0,
                                                     duration: const Duration(
                                                         milliseconds: 500));
-                                                final item = new ItemProduct(listTabsView[i][index].id.toString() , productOrder, 1);
+                                                final item = new ItemProduct(listProductView[index].id.toString() , productOrder, 1);
                                                 _items = []
                                                   ..add(item)
                                                   ..addAll(_items);
@@ -2671,15 +2303,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                               listKey.currentState.insertItem(0,
                                                   duration: const Duration(
                                                       milliseconds: 500));
-                                              final item = new ItemProduct(listTabsView[i][index].id.toString(), productOrder, 1);
+                                              final item = new ItemProduct(listProductView[index].id.toString(), productOrder, 1);
                                               _items = []
                                                 ..add(item)
                                                 ..addAll(_items);
                                             }
 
                                             //TODO: show combo
-                                            if(listTabsView[i][index].combo != null && listTabsView[i][index].combo.length > 0) {
-                                              _showCombo(listTabsView[i][index].combo);
+                                            if(listProductView[index].combo != null && listProductView[index].combo.length > 0) {
+                                              _showCombo(listProductView[index].combo);
                                             }
                                           });
                                         },
@@ -2691,7 +2323,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                               height: 80,
                                               decoration: new BoxDecoration(
                                                 image: new DecorationImage(
-                                                  image:  NetworkImage( "https://nhapi.hongngochospital.vn" + listTabsView[i][index].imageUrl),
+                                                  image:  NetworkImage( "https://nhapi.hongngochospital.vn" +listProductView[index].imageUrl),
                                                   fit: BoxFit.fill,
                                                 ),
                                               ),
@@ -2699,7 +2331,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                             Container(
                                               height: 23,
                                               margin: EdgeInsets.only(top: 3, left: 10),
-                                              child: Text(listTabsView[i][index].productName,
+                                              child: Text(listProductView[index].productName,
                                                   overflow: TextOverflow.ellipsis,
                                                   style: TextStyle(
                                                       fontSize: 14,
@@ -2713,7 +2345,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                                 padding: EdgeInsets.only(bottom: 0, right: 5),
                                                 child:  Align(
                                                   alignment: Alignment.bottomRight,
-                                                  child: Text( Money.fromInt((listTabsView[i][index].price), vnd).format('###,### CCC').toString() , style: TextStyle(
+                                                  child: Text( Money.fromInt((listProductView[index].price), vnd).format('###,### CCC').toString() , style: TextStyle(
                                                       fontSize: 13,
                                                       fontWeight: FontWeight.bold
                                                   )),
@@ -2726,23 +2358,22 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   ),
                                 );
                               },
-                              childCount: listTabsView[i].length
+                              childCount: listProductView.length
                             /// Set childCount to limit no.of items
                             /// childCount: 100,
                           ),
                         )
                     ),
-                    SliverToBoxAdapter(
-                      child: _canLoadMores[i]
-                          ? Container(
-                        padding: EdgeInsets.only(bottom: 16),
-                        alignment: Alignment.center,
-                        child: CircularProgressIndicator(),
-                      )
-                          : SizedBox(),
-                    ),
                   ],
                 ),
+              )
+          ): Container(
+              height: size.height - 170,
+              child: Center(
+                  child: Text("Không có dữ liệu. !", style: TextStyle(
+                      fontSize: 20,
+                      color: Colors.grey
+                  ))
               )
           ),
         ],
@@ -3325,11 +2956,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  void _updateProductions(int index, String id) async {
+  void _updateProductions(CategoryMealRestaurantModel cate) async {
 
     String branchId = Provider.of<SettingProvider>(context, listen: false).userInfo.branchId;
 
-    ResultModel res = await restaurantService.getProductsByParams(branchId, "", id, listTextController[index].text, 1, 50);
+    ResultModel res = await restaurantService.getProductsByParams(branchId, "", cate.categoryId, "", 1, 50);
 
     if(res.status && res.data != null && res.data.length > 0) {
       List<ProductRestaurantModel> product = [];
@@ -3339,23 +2970,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         });
       }
       setState(() {
-        listTabsView[index].clear();
-        listTabsView[index] = []..addAll(product);
+        listProductView.clear();
+        listProductView = []..addAll(product);
       });
     } else {
       setState(() {
-        listTabsView[index].clear();
+        listProductView.clear();
       });
     }
   }
 
-  void _searchItems(String keySearch, int i) async {
+  void _searchItems(String keySearch) async {
 
     String branchId = Provider.of<SettingProvider>(context, listen: false).userInfo.branchId;
 
     String categoryId = selectedCategoryMealRestaurant != null ? selectedCategoryMealRestaurant.categoryId : "";
 
-    ResultModel res = await restaurantService.getProductsByParams(branchId, categories[i].categoryId, categoryId, keySearch, 1, 50);
+    ResultModel res = await restaurantService.getProductsByParams(branchId, "", categoryId, keySearch, 1, 50);
 
     setState(() {
       if(res.status && res.data != null && res.data.length > 0) {
@@ -3366,12 +2997,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           });
         }
         setState(() {
-          listTabsView[i].clear();
-          listTabsView[i] = []..addAll(product);
+          listProductView.clear();
+          listProductView = []..addAll(product);
         });
       } else {
         setState(() {
-          listTabsView[i].clear();
+          listProductView.clear();
         });
       }
     });
@@ -3455,11 +3086,24 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   int roundNumber(int number) {
     int round;
     if( number % 1000 != 0) {
-      round = ((number / 1000).round() * 1000) + 1000;
+      int r  = number % 1000;
+      if(r >= 500) {
+        round = ((number / 1000 ).round() * 1000);
+      } else {
+        round = ((number / 1000 ).round() * 1000) + 1000;
+      }
     } else {
       round = number;
     }
     return round;
+  }
+
+  void _openEndDrawer() {
+    _scaffoldKey.currentState.openEndDrawer();
+  }
+
+  void _closeEndDrawer() {
+    Navigator.pop(context);
   }
 
   @override
@@ -3495,9 +3139,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     // TODO: implement build
     return _loading ? loading() : Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         iconTheme: IconThemeData(color: Color(0xFF848a93),),
         backgroundColor: Color(0xFFf4f5f7),
+        actions: <Widget>[
+          new Container(),
+        ],
         title: Container(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -3570,55 +3218,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       ),
                     ],
                   ),
-                  child: DefaultTabController(
-                    length: categories.length,
-                    child: Scaffold(
-                      appBar: PreferredSize(
-                        preferredSize: Size.fromHeight(70),
-                        child: new Container(
-                          color: Color(0xfff7f7f7),
-                          child: new SafeArea(
-                            child: Column(
-                              children: <Widget>[
-                                new TabBar(
-                                  indicatorColor: PrimaryGreenColor,
-                                  tabs: listWidget.toList(),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      body: new TabBarView(
-//                          controller: _tabController,
-                          children: List.generate(
-                            categories.length , (index) => _buildAnyWidgets(context, index),
-                          )
-                      ),
-                    ),
-                  ),
-                ),
-                flex: 4,
-              ),
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Color(0xfff7f7f7),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.2),
-                        spreadRadius: 3,
-                        blurRadius: 6,
-                      ),
-                    ],
-                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.white
+                            color: Colors.white
                         ),
                         height: 50,
                         width: size.width * 0.4,
@@ -3634,42 +3240,64 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               ),
                             ),
                             Container(
+                              width: 90,
                               margin: EdgeInsets.only(left: 10),
-                              child: Text("${widget.table.tableName}", style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 20,
-                              )),
+                              child: Text("${widget.table.tableName}",
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 20,
+                                  )),
                             ),
                             Container(
+                              width: 140,
                               margin: EdgeInsets.only(
-                                left: 50
+                                  left: 10
                               ),
                               child: Text(
                                 this._order != null && this._order.reservationId != null ? "Bill: ${this._order.reservationId}" : "",
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  fontSize: 20
+                                    fontSize: 20
                                 ),
+                              ),
+                            ),
+                            Container(
+                              width: 40,
+                              height: 40,
+                              margin: EdgeInsets.only(top: 5, bottom: 5),
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(5.0),
+                                  color: PrimaryGreenLightColor
+                              ),
+                              child: IconButton(
+                                  onPressed: () {
+                                    _showCommission();
+                                  },
+                                  color: Colors.white,
+                                  icon:  Icon((_order.commissionRestaurantModel.customerName != "" && _order.commissionRestaurantModel.customerName != null) ||
+                                      (_order.commissionRestaurantModel.receiveName != "" && _order.commissionRestaurantModel.receiveName != null) ? Icons.done : Icons.add)
                               ),
                             )
                           ],
                         ),
                       ),
                       Container(
-                        height: size.height - 510,
-                        decoration: BoxDecoration(
-                        ),
-                        child: Scrollbar(
-                          child: Container(
-                            height: double.infinity,
-                            child: new AnimatedList(
-                              key: listKey,
-                              initialItemCount: _items.length,
-                              itemBuilder: (context, index, animation) {
-                                return _buildItem(context, index, animation);
-                              },
-                            ),
+                          height: size.height - 450,
+                          decoration: BoxDecoration(
                           ),
-                        )
+                          child: Scrollbar(
+                            child: Container(
+                              height: double.infinity,
+                              child: new AnimatedList(
+                                key: listKey,
+                                initialItemCount: _items.length,
+                                itemBuilder: (context, index, animation) {
+                                  return _buildItem(context, index, animation);
+                                },
+                              ),
+                            ),
+                          )
                       ),
                       Container(
                         height: 50,
@@ -3712,40 +3340,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 ),
                               ),
                             ),
-                            Container(
-                              width: 130,
-                              height: 40,
-                              margin: EdgeInsets.only(top: 10, left: 15),
-                              decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(5.0),
-                                  color: PrimaryGreenLightColor
-                              ),
-                              child: TextButton(
-                                onPressed: () {
-                                  _showCommission();
-                                },
-                                child: Stack(
-                                  children: [
-                                    Positioned(
-                                      top: 0,
-                                      child: Icon(
-                                        Icons.attach_money,
-                                        color: Colors.white,
-                                        size: 20,
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: EdgeInsets.only(left: 20, top: 0),
-                                      child: Text("Hoa hồng",
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.white
-                                      )),
-                                    )
-                                  ],
-                                ),
-                              ),
-                            )
                           ],
                         ),
                       ),
@@ -3766,254 +3360,385 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       ),
                       Container(
                         height: 30,
+                        width: size.width * 0.4,
+                        margin: EdgeInsets.only(left: 20, right: 10),
+                        child: Text("Khách hàng: ${_order.commissionRestaurantModel.customerName != null ? _order.commissionRestaurantModel.customerName: "" }",
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle()),
+                      ),
+                      Container(
+                        height: 30,
+                        width: size.width * 0.4,
+                        margin: EdgeInsets.only(left: 20, right: 10),
+                        child: Text("Người nhận: ${_order.commissionRestaurantModel.receiveName != null ? _order.commissionRestaurantModel.receiveName: ""}",
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle()),
+                      ),
+                      Container(
+                        height: 30,
                         margin: EdgeInsets.only(left: 10, right: 10, top: 10),
                         child: Center(
                           child: Text("Tổng tiền: ${Money.fromInt(_totalAfterFeeAndTax , vnd).format('###,### CCC').toString()}" , style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold
                           )),
                         ),
                       ),
                       Container(
                         height: 50,
-                        margin: EdgeInsets.only(left: 10, right: 10, top: 10),
                         width: size.width * 0.4,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(5.0),
-                          color: Colors.redAccent
-                        ),
-                        child: TextButton(
-                          onPressed: () {
-
-                            if(_order.reservationId != null) {
-                              setState(() {
-                                for(var i = 0; i <= _items.length - 1; i++) {
-                                  if(_items[i].product.status == "CHECKIN"){
-                                    listKey.currentState.removeItem( 0,
-                                            (context, animation) {
-                                          return Container();
-                                        });
-                                  }
-                                }
-                                _items.removeWhere((element) => element.product.status == "CHECKIN");
-                              });
-                            } else {
-                              for(var i = 0; i <= _items.length - 1; i++) {
-                                listKey.currentState.removeItem( 0,
-                                        (context, animation) {
-                                      return Container();
+                        child: Row(
+                          children: [
+                            Container(
+                              height: 50,
+                              width: 150,
+                              margin: EdgeInsets.only(left: 10, right: 20),
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(5.0),
+                                  color: Colors.redAccent
+                              ),
+                              child: TextButton(
+                                onPressed: () {
+                                  if(_order.reservationId != null) {
+                                    setState(() {
+                                      for(var i = 0; i <= _items.length - 1; i++) {
+                                        if(_items[i].product.status == "CHECKIN"){
+                                          listKey.currentState.removeItem( 0,
+                                                  (context, animation) {
+                                                return Container();
+                                              });
+                                        }
+                                      }
+                                      _items.removeWhere((element) => element.product.status == "CHECKIN");
                                     });
-                              }
-                              setState(() {
-                                _items.clear();
-                              });
-                            }
-                          },
-                          child: Text("XOÁ TẤT CẢ", style: TextStyle(
-                            color: Colors.white
-                          )),
+                                  } else {
+                                    for(var i = 0; i <= _items.length - 1; i++) {
+                                      listKey.currentState.removeItem( 0,
+                                              (context, animation) {
+                                            return Container();
+                                          });
+                                    }
+                                    setState(() {
+                                      _items.clear();
+                                    });
+                                  }
+                                },
+                                child: Text("XOÁ TẤT CẢ", style: TextStyle(
+                                    color: Colors.white
+                                )),
+                              ),
+                            ),
+                            Container(
+                              height: 50,
+                              margin: EdgeInsets.only(),
+                              width: 150,
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(5.0),
+                                  color: PrimaryGreenColor
+                              ),
+                              child: TextButton(
+                                onPressed: () async {
+                                  if(this._order.reservationId != null) {
+                                    //TODO: controls the order got bill
+                                    List<ProductOrderModel> list = [];
+                                    _items.forEach((element) {
+                                      ProductOrderModel pro = element.product;
+                                      if (element.product.status == "PRE-CANCELLED") {
+                                        pro.status = "CANCEL";
+                                      }
+                                      pro.quantity = element.number;
+                                      list.add(pro);
+                                    });
+                                    DateTime now = DateTime.now();
+                                    int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
+                                    _order.products = list;
+                                    _order.usedAt = timeOrder;
+
+                                    // TODO: Order
+                                    setState(() {
+                                      _isLoading = true;
+                                    });
+                                    ResultModel res = await restaurantService.reOrderFood(_order.toJson(), _order.id);
+                                    if(res.status) {
+                                      _showToast();
+                                      //TODO: go to table screen
+                                      Navigator.push(context,
+                                          MaterialPageRoute(builder: (context) => TableScreen())
+                                      );
+
+                                    } else {
+                                      _showToastError("Đặt đồ không thành công." );
+                                    }
+                                    setState(() {
+                                      _isLoading = false;
+                                    });
+                                  } else {
+                                    //TODO: controls the order didn't got bill
+                                    List<ProductOrderModel> list = [];
+                                    _items.forEach((element) {
+                                      ProductOrderModel pro = element.product;
+                                      if (element.product.status == "PRE-CANCELLED") {
+                                        pro.status = "CANCEL";
+                                      }
+                                      pro.quantity = element.number;
+                                      list.add(pro);
+                                    });
+
+                                    DateTime now = DateTime.now();
+                                    int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
+                                    _order.usedAt = timeOrder;
+                                    _order.products = list;
+                                    _order.tableInfo = widget.table;
+
+                                    // TODO: Order
+                                    setState(() {
+                                      _isLoading = true;
+                                    });
+                                    ResultModel res = await restaurantService.orderFood(_order.toJson());
+                                    if(res.status) {
+                                      _showToast();
+                                      //TODO: go to table screen
+                                      Navigator.push(context,
+                                          MaterialPageRoute(builder: (context) => TableScreen())
+                                      );
+                                    } else {
+                                      _showToastError("Đặt đồ không thành công." );
+                                    }
+                                  }
+
+                                },
+                                child: Text("ĐẶT MÓN", style: TextStyle(
+                                    color: Colors.white
+                                )),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       Container(
                         height: 50,
-                        margin: EdgeInsets.only(left: 10, right: 10, top: 10, bottom: 10),
                         width: size.width * 0.4,
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(5.0),
-                            color: PrimaryGreenColor
-                        ),
-                        child: TextButton(
-                          onPressed: () async {
-                            if(this._order.reservationId != null) {
-                              //TODO: controls the order got bill
-                              List<ProductOrderModel> list = [];
-                              _items.forEach((element) {
-                                ProductOrderModel pro = element.product;
-                                if (element.product.status == "PRE-CANCELLED") {
-                                  pro.status = "CANCELLED";
-                                }
-                                pro.quantity = element.number;
-                                list.add(pro);
-                              });
-                              DateTime now = DateTime.now();
-                              int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
-                              _order.products = list;
-                              _order.usedAt = timeOrder;
+                        margin: EdgeInsets.only(top: 10),
+                        child: Row(
+                          children: [
+                            Container(
+                              height: 50,
+                              margin: EdgeInsets.only(left: 10, right: 20),
+                              width: 150,
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(5.0),
+                                  color: PrimaryGreenColor
+                              ),
+                              child: TextButton(
+                                onPressed: () async {
+                                  if(_items.length < 0) {
+                                    _showToastError("Vui lòng chọn món ăn ." );
+                                    return;
+                                  }
+                                  if(this._order.reservationId != null) {
+                                    //TODO: controls the order got bill
+                                    List<ProductOrderModel> list = [];
+                                    _items.forEach((element) {
+                                      ProductOrderModel pro = element.product;
+                                      if (element.product.status == "PRE-CANCELLED") {
+                                        pro.status = "CANCEL";
+                                      }
+                                      pro.quantity = element.number;
+                                      list.add(pro);
+                                    });
+                                    DateTime now = DateTime.now();
+                                    int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
+                                    _order.products = list;
+                                    _order.usedAt = timeOrder;
+                                    _order.status = "CHECKOUT";
 
-                              // TODO: Order
-                              setState(() {
-                                _isLoading = true;
-                              });
-                              ResultModel res = await restaurantService.reOrderFood(_order.toJson(), _order.id);
-                              if(res.status) {
-                                _showToast();
-                                //TODO: go to table screen
-                                Navigator.push(context,
-                                    MaterialPageRoute(builder: (context) => TableScreen())
-                                );
+                                    // TODO: Order
+                                    setState(() {
+                                      _isLoading = true;
+                                    });
+                                    ResultModel res = await restaurantService.reOrderFood(_order.toJson(), _order.id);
+                                    if(res.status) {
+                                      _showToast();
+                                      //TODO: go to table screen
+                                      Navigator.push(context,
+                                          MaterialPageRoute(builder: (context) => TableScreen())
+                                      );
 
-                              } else {
-                                _showToastError("Đặt đồ không thành công." );
-                              }
-                              setState(() {
-                                _isLoading = false;
-                              });
-                            } else {
-                              //TODO: controls the order didn't got bill
-                              List<ProductOrderModel> list = [];
-                              _items.forEach((element) {
-                                ProductOrderModel pro = element.product;
-                                if (element.product.status == "PRE-CANCELLED") {
-                                  pro.status = "CANCELLED";
-                                }
-                                pro.quantity = element.number;
-                                list.add(pro);
-                              });
+                                    } else {
+                                      _showToastError("Đặt đồ không thành công." );
+                                    }
+                                    setState(() {
+                                      _isLoading = false;
+                                    });
+                                  } else {
+                                    //TODO: controls the order didn't got bill
+                                    List<ProductOrderModel> list = [];
+                                    _items.forEach((element) {
+                                      ProductOrderModel pro = element.product;
+                                      if (element.product.status == "PRE-CANCELLED") {
+                                        pro.status = "CANCEL";
+                                      }
+                                      pro.quantity = element.number;
+                                      list.add(pro);
+                                    });
 
-                              DateTime now = DateTime.now();
-                              int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
-                              _order.usedAt = timeOrder;
-                              _order.products = list;
-                              _order.tableInfo = widget.table;
+                                    DateTime now = DateTime.now();
+                                    int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
+                                    _order.usedAt = timeOrder;
+                                    _order.status = "CHECKOUT";
+                                    _order.products = list;
+                                    _order.tableInfo = widget.table;
 
-                              // TODO: Order
-                              setState(() {
-                                _isLoading = true;
-                              });
-                              ResultModel res = await restaurantService.orderFood(_order.toJson());
-                              if(res.status) {
-                                _showToast();
-                                //TODO: go to table screen
-                                Navigator.push(context,
-                                    MaterialPageRoute(builder: (context) => TableScreen())
-                                );
-                              } else {
-                                _showToastError("Đặt đồ không thành công." );
-                              }
-                            }
+                                    // TODO: Order
+                                    setState(() {
+                                      _isLoading = true;
+                                    });
+                                    ResultModel res = await restaurantService.orderFood(_order.toJson());
+                                    if(res.status) {
+                                      _showToast();
+                                      //TODO: go to table screen
+                                      Navigator.push(context,
+                                          MaterialPageRoute(builder: (context) => TableScreen())
+                                      );
+                                    } else {
+                                      _showToastError("Đặt đồ không thành công." );
+                                    }
+                                  }
 
-                          },
-                          child: Text("ĐẶT MÓN", style: TextStyle(
-                              color: Colors.white
-                          )),
+                                },
+                                child: Text("THANH TOÁN NHANH", style: TextStyle(
+                                    color: Colors.white
+                                )),
+                              ),
+                            ),
+                            Container(
+                              height: 50,
+                              margin: EdgeInsets.only(),
+                              width: 150,
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(5.0),
+                                  color: PrimaryGreenColor
+                              ),
+                              child: TextButton(
+                                onPressed: () async {
+                                  _showDialogPayment();
+                                },
+                                child: Text("THANH TOÁN", style: TextStyle(
+                                    color: Colors.white
+                                )),
+                              ),
+                            )
+                          ],
                         ),
                       ),
-                      Container(
-                        height: 50,
-                        margin: EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 10),
-                        width: size.width * 0.4,
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(5.0),
-                            color: PrimaryGreenColor
-                        ),
-                        child: TextButton(
-                          onPressed: () async {
-                            if(_items.length < 0) {
-                              _showToastError("Vui lòng chọn món ăn ." );
-                              return;
-                            }
-                            if(this._order.reservationId != null) {
-                              //TODO: controls the order got bill
-                              List<ProductOrderModel> list = [];
-                              _items.forEach((element) {
-                                ProductOrderModel pro = element.product;
-                                if (element.product.status == "PRE-CANCELLED") {
-                                  pro.status = "CANCELLED";
-                                }
-                                pro.quantity = element.number;
-                                list.add(pro);
-                              });
-                              DateTime now = DateTime.now();
-                              int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
-                              _order.products = list;
-                              _order.usedAt = timeOrder;
-                              _order.status = "CHECKOUT";
-
-                              // TODO: Order
-                              setState(() {
-                                _isLoading = true;
-                              });
-                              ResultModel res = await restaurantService.reOrderFood(_order.toJson(), _order.id);
-                              if(res.status) {
-                                _showToast();
-                                //TODO: go to table screen
-                                Navigator.push(context,
-                                    MaterialPageRoute(builder: (context) => TableScreen())
-                                );
-
-                              } else {
-                                _showToastError("Đặt đồ không thành công." );
-                              }
-                              setState(() {
-                                _isLoading = false;
-                              });
-                            } else {
-                              //TODO: controls the order didn't got bill
-                              List<ProductOrderModel> list = [];
-                              _items.forEach((element) {
-                                ProductOrderModel pro = element.product;
-                                if (element.product.status == "PRE-CANCELLED") {
-                                  pro.status = "CANCELLED";
-                                }
-                                pro.quantity = element.number;
-                                list.add(pro);
-                              });
-
-                              DateTime now = DateTime.now();
-                              int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
-                              _order.usedAt = timeOrder;
-                              _order.status = "CHECKOUT";
-                              _order.products = list;
-                              _order.tableInfo = widget.table;
-
-                              // TODO: Order
-                              setState(() {
-                                _isLoading = true;
-                              });
-                              ResultModel res = await restaurantService.orderFood(_order.toJson());
-                              if(res.status) {
-                                _showToast();
-                                //TODO: go to table screen
-                                Navigator.push(context,
-                                    MaterialPageRoute(builder: (context) => TableScreen())
-                                );
-                              } else {
-                                _showToastError("Đặt đồ không thành công." );
-                              }
-                            }
-
-                          },
-                          child: Text("THANH TOÁN NHANH", style: TextStyle(
-                              color: Colors.white
-                          )),
-                        ),
-                      ),
-                      Container(
-                        height: 50,
-                        margin: EdgeInsets.only(left: 10, right: 10, top: 0, bottom: 30),
-                        width: size.width * 0.4,
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(5.0),
-                            color: PrimaryGreenColor
-                        ),
-                        child: TextButton(
-                          onPressed: () async {
-                            _showDialogPayment();
-                          },
-                          child: Text("THANH TOÁN", style: TextStyle(
-                              color: Colors.white
-                          )),
-                        ),
-                      )
                     ],
                   ),
                 ),
                 flex: 2,
               ),
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Color(0xfff7f7f7),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.2),
+                        spreadRadius: 3,
+                        blurRadius: 6,
+                      ),
+                    ],
+                  ),
+                  child: _buildAnyWidgets(context),
+                ),
+                flex: 4,
+              ),
             ],
           ),
         ),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: Container(
+        height: 500,
+        width: 60,
+        child: Column(
+          children: [
+            Container(
+                height: 140,
+                width: 50,
+                margin: EdgeInsets.only(bottom: 20),
+                child: FloatingActionButton(
+                  backgroundColor: Colors.blueAccent,
+                  onPressed: () {
+                    setState(() {
+                      categoriesMeal = listCateBar;
+                    });
+                    _openEndDrawer();
+                  },
+                  child: RotatedBox(
+                      quarterTurns: 3,
+                      child: Text("Quầy bar", style: TextStyle(
+                          fontSize: 18
+                      ))
+                  ),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(15.0))
+                  ),
+                )
+            ),
+            Container(
+                height: 140,
+                width: 50,
+                margin: EdgeInsets.only(bottom: 20),
+                child: FloatingActionButton(
+                  backgroundColor: Colors.green,
+                  onPressed: () {
+                    setState(() {
+                      categoriesMeal = listCateBep;
+                    });
+                    _openEndDrawer();
+                  },
+                  child: RotatedBox(
+                      quarterTurns: 3,
+                      child: Text("Nhà bếp", style: TextStyle(
+                          fontSize: 18
+                      ))
+                  ),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(15.0))
+                  ),
+                )
+            ),
+            Container(
+                height: 140,
+                width: 50,
+
+                child: FloatingActionButton(
+                  backgroundColor: Colors.yellowAccent,
+                  onPressed: () {
+                    setState(() {
+                      categoriesMeal = listCateBanh;
+                    });
+                    _openEndDrawer();
+                  },
+                  child: RotatedBox(
+                      quarterTurns: 3,
+                      child: Text("Quầy bánh", style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.grey
+                      ))
+                  ),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(15.0))
+                  ),
+                )
+            )
+          ],
+        ),
+      ),
+      endDrawer: DrawerCategory(categories: categoriesMeal, callback: (val) {
+        _updateProductions(val);
+        _closeEndDrawer();
+      })
     );
   }
 }
