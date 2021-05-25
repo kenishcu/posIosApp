@@ -8,6 +8,7 @@ import 'package:pos_ios_bvhn/components/custom_grid_view.dart';
 import 'package:pos_ios_bvhn/components/custom_popup.dart';
 import 'package:pos_ios_bvhn/components/drawer.dart';
 import 'package:pos_ios_bvhn/components/drawer_category.dart';
+import 'package:pos_ios_bvhn/model/restaurant/branch_restaurant_infomation_model.dart';
 import 'package:pos_ios_bvhn/model/restaurant/category_meal_restaurant_model.dart';
 import 'package:pos_ios_bvhn/model/restaurant/category_restaurant_model.dart';
 import 'package:pos_ios_bvhn/model/restaurant/commission_restaurant_model.dart';
@@ -21,6 +22,7 @@ import 'package:pos_ios_bvhn/model/table/table_model.dart';
 import 'package:pos_ios_bvhn/model/user/partner_customer_model.dart';
 import 'package:pos_ios_bvhn/model/user/user_model.dart';
 import 'package:pos_ios_bvhn/provider/setting_provider.dart';
+import 'package:pos_ios_bvhn/service/branch_service.dart';
 import 'package:pos_ios_bvhn/service/partner_customer_service.dart';
 import 'package:pos_ios_bvhn/service/restaurant_service.dart';
 import 'package:pos_ios_bvhn/ui/home/table_screen.dart';
@@ -214,6 +216,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   final PartnerCustomerService partnerCustomerService = new PartnerCustomerService();
 
+  final BranchService branchService = new BranchService();
+
   @override
   void initState() {
 
@@ -365,6 +369,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             _commission, 0, 0, 0,
             "RESTAURANT","CASH", [], null, 0,
             0, "CHECKIN", widget.table, 0, 0, timeOrder, paymentOther);
+      });
+    }
+
+    String branchId = Provider.of<SettingProvider>(context, listen: false).userInfo.branchId;
+
+    ResultModel resBranch = await branchService.getBranchInformation(branchId);
+
+    if(resBranch.status) {
+      BranchRestaurantInformationModel branchInfo = BranchRestaurantInformationModel.fromJson(resBranch.data);
+      setState(() {
+        _order.taxRate = branchInfo.taxRate != null ? branchInfo.taxRate : 0;
+        _order.serviceChargeRate = branchInfo.serviceRate != null ? branchInfo.serviceRate : 0;
       });
     }
   }

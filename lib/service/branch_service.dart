@@ -21,4 +21,17 @@ class BranchService {
       throw (e.message);
     }
   }
+
+  Future<ResultModel> getBranchInformation(String branchId) async {
+    try {
+      Response response = await client.dio.request(
+          API_URL + '/branch/${branchId.toString()}',
+          options: Options(method: 'GET')
+      );
+      return ResultModel.fromJson(response.data);
+    } on DioError catch (e) {
+      print("error: ");
+      throw (e.message);
+    }
+  }
 }
