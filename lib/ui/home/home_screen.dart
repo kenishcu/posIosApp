@@ -50,8 +50,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   bool selected = false;
 
-  String receiver = "";
-
   String customer = "";
 
   List<ProductRestaurantModel> listProductView = [];
@@ -132,8 +130,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   final vnd = Currency.create('VND', 0, symbol: '₫');
 
   List<OrderPaymentTypeModel> paymentTypes = [
-    OrderPaymentTypeModel("Thanh toán khác", 'OTHER'),
     OrderPaymentTypeModel("Khách nợ", 'DEBT'),
+    OrderPaymentTypeModel("Thanh toán khác", 'OTHER'),
     OrderPaymentTypeModel("Thanh toán thẻ", 'CREDIT_CARD'),
     OrderPaymentTypeModel("Miễn phí", 'FREE'),
   ];
@@ -223,7 +221,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     setState(() {
       _loading = true;
-      // dropdownPaymentTypeValue = paymentTypes.first;
+      dropdownPaymentTypeValue = paymentTypes.first;
     });
 
     fToast = FToast();
@@ -1324,8 +1322,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       ),
                     ),
                     CustomPopup(customer: _order.commissionRestaurantModel.customerName ,
-                        receiver : _order.commissionRestaurantModel.receiveName,
-                        callback: (val, val2, val3) => setState( () => {dropdownPaymentTypeValue = val, receiver = val2, customer = val3})),
+                        callback: (val, val2) async {
+                          setState( () => {dropdownPaymentTypeValue = val, customer = val2});
+                          if(dropdownPaymentTypeValue.value == "OTHER") {
+                            await _showOtherPayment();
+                          }
+                        }),
                     Container(
                       height: 60,
                       width: 150,
@@ -1342,26 +1344,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               _showToastError("Vui lòng chọn đồ để đặt." );
                               return;
                             }
-                            if((dropdownPaymentTypeValue.value == "FREE") && (customer == null || customer.isEmpty)) {
+                            if((dropdownPaymentTypeValue.value == "FREE" || dropdownPaymentTypeValue.value == "DEBT") && (customer == null || customer.isEmpty)) {
                               _showToastError("Vui lòng chọn khách hàng." );
                               return;
                             }
-                            if((dropdownPaymentTypeValue.value == "DEBT") && (receiver == null || receiver.isEmpty)) {
-                              _showToastError("Vui lòng điền người nhận." );
-                              return;
-                            }
 
-                            if(dropdownPaymentTypeValue.value == "FREE") {
+                            if(dropdownPaymentTypeValue.value == "FREE" || dropdownPaymentTypeValue.value == "DEBT") {
                               setState(() {
                                 _order.commissionRestaurantModel.customerName = customer;
                               });
                             }
 
-                            if(dropdownPaymentTypeValue.value == "DEBT") {
-                              setState(() {
-                                _order.commissionRestaurantModel.receiveName = receiver;
-                              });
-                            }
 
                             if(this._order.reservationId != null) {
                               //TODO: controls the order got bill
@@ -1441,9 +1434,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               _showToastError("Vui lòng chọn đồ để đặt." );
                               return;
                             }
-                            setState(() {
-                              dropdownPaymentTypeValue = paymentTypes.first;
-                            });
                             await _showOtherPayment();
                           }
                         },
@@ -2002,11 +1992,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           ),
                         ),
                         Container(
-                          height: 0.05 * size.height,
-                          width: size.width * 0.8,
-                        ),
-                        Container(
-                            height: size.height * 0.05,
+                            height: size.height * 0.1,
+                            margin: EdgeInsets.only(top: 20),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
@@ -2067,7 +2054,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                                            + _order.paymentOtherModel.free + _order.paymentOtherModel.bank + _order.paymentOtherModel.voucher
                                                            + _order.paymentOtherModel.cash;
                                           if(totalEditing != _total) {
-                                            _showToastError("Đặt đồ không thành công." );
+                                            _showToastError("Số liệu thanh toán không khớp." );
                                             return;
                                           }
                                           // TODO: Order
@@ -2083,7 +2070,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                             );
 
                                           } else {
-                                            _showToastError("Tổng tiền không khớp với hoá đơn !");
+                                            _showToastError("Thanh toán không thành công (Lỗi thanh toán)!");
                                           }
                                           setState(() {
                                             _isLoading = false;
@@ -3454,6 +3441,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               ),
                               child: TextButton(
                                 onPressed: () async {
+                                  if(_items.length == 0) {
+                                    _showToastError("Vui lòng chọn món ăn ." );
+                                    return;
+                                  }
                                   if(this._order.reservationId != null) {
                                     //TODO: controls the order got bill
                                     List<ProductOrderModel> list = [];
@@ -3477,13 +3468,56 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                     ResultModel res = await restaurantService.reOrderFood(_order.toJson(), _order.id);
                                     if(res.status) {
                                       _showToast();
-                                      //TODO: go to table screen
-                                      Navigator.push(context,
-                                          MaterialPageRoute(builder: (context) => TableScreen())
-                                      );
+                                      setState(() {
+                                        _items.clear();
+                                      });
+
+                                      String tableId = widget.table.id;
+
+                                      ResultModel resTableData = await restaurantService.getOrderByTable(tableId);
+
+                                      if(resTableData.status) {
+                                        setState(() {
+                                          this._order = OrderRestaurantModel.fromJson(resTableData.data[0]);
+                                          _commission = this._order.commissionRestaurantModel;
+
+                                          // set _items to list payments
+                                          if (this._order.products != null && this._order.products.length > 0) {
+                                            for(int i = 0; i < this._order.products.length; i++) {
+                                              final item = new ItemProduct( this._order.products[i].id, this._order.products[i], this._order.products[i].quantity);
+                                              setState(() {
+                                                _items = []
+                                                  ..add(item)
+                                                  ..addAll(_items);
+                                              });
+                                            }
+                                          }
+                                        });
+                                      } else {
+                                        UserModel user = Provider.of<SettingProvider>(context, listen: false).userInfo;
+                                        DateTime now = DateTime.now();
+                                        int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
+                                        setState(() {
+                                          PaymentOtherModel  paymentOther = new PaymentOtherModel(
+                                              0,0,0,0,0,0,0,0
+                                          );
+                                          _commission = new CommissionRestaurantModel("", "", "", 0);
+                                          _order = new OrderRestaurantModel("", user.branchId, user.branchName, user.branchCode,
+                                              _commission, 0, 0, 0,
+                                              "RESTAURANT","CASH", [], null, 0,
+                                              0, "CHECKIN", widget.table, 0, 0, timeOrder, paymentOther);
+                                        });
+                                      }
+
+                                      setState(() {
+                                        _isLoading = false;
+                                      });
 
                                     } else {
                                       _showToastError("Đặt đồ không thành công." );
+                                      setState(() {
+                                        _isLoading = false;
+                                      });
                                     }
                                     setState(() {
                                       _isLoading = false;
@@ -3513,15 +3547,63 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                     ResultModel res = await restaurantService.orderFood(_order.toJson());
                                     if(res.status) {
                                       _showToast();
-                                      //TODO: go to table screen
-                                      Navigator.push(context,
-                                          MaterialPageRoute(builder: (context) => TableScreen())
-                                      );
+                                      //TODO: clear items
+                                      setState(() {
+                                        _items.clear();
+                                      });
+
+                                      String tableId = widget.table.id;
+
+                                      ResultModel resTableData = await restaurantService.getOrderByTable(tableId);
+
+                                      if(resTableData.status) {
+                                        setState(() {
+                                          this._order = OrderRestaurantModel.fromJson(resTableData.data[0]);
+                                          _commission = this._order.commissionRestaurantModel;
+
+                                          // set _items to list payments
+                                          if (this._order.products != null && this._order.products.length > 0) {
+                                            for(int i = 0; i < this._order.products.length; i++) {
+                                              final item = new ItemProduct( this._order.products[i].id, this._order.products[i], this._order.products[i].quantity);
+                                              setState(() {
+                                                _items = []
+                                                  ..add(item)
+                                                  ..addAll(_items);
+                                              });
+                                            }
+                                          }
+                                        });
+                                      } else {
+                                        UserModel user = Provider.of<SettingProvider>(context, listen: false).userInfo;
+                                        DateTime now = DateTime.now();
+                                        int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
+                                        setState(() {
+                                          PaymentOtherModel  paymentOther = new PaymentOtherModel(
+                                              0,0,0,0,0,0,0,0
+                                          );
+                                          _commission = new CommissionRestaurantModel("", "", "", 0);
+                                          _order = new OrderRestaurantModel("", user.branchId, user.branchName, user.branchCode,
+                                              _commission, 0, 0, 0,
+                                              "RESTAURANT","CASH", [], null, 0,
+                                              0, "CHECKIN", widget.table, 0, 0, timeOrder, paymentOther);
+                                        });
+                                      }
+
+                                      setState(() {
+                                        _isLoading = false;
+                                      });
+
                                     } else {
                                       _showToastError("Đặt đồ không thành công." );
+                                      setState(() {
+                                        _isLoading = false;
+                                      });
                                     }
                                   }
 
+                                  setState(() {
+                                    _isLoading = false;
+                                  });
                                 },
                                 child: Text("ĐẶT MÓN", style: TextStyle(
                                     color: Colors.white
@@ -3547,7 +3629,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               ),
                               child: TextButton(
                                 onPressed: () async {
-                                  if(_items.length < 0) {
+                                  if(_items.length == 0) {
                                     _showToastError("Vui lòng chọn món ăn ." );
                                     return;
                                   }
@@ -3637,7 +3719,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               ),
                               child: TextButton(
                                 onPressed: () async {
-                                  _showDialogPayment();
+                                  await _showDialogPayment();
                                 },
                                 child: Text("THANH TOÁN", style: TextStyle(
                                     color: Colors.white

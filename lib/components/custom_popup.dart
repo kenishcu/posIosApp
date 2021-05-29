@@ -8,15 +8,13 @@ import 'package:select_dialog/select_dialog.dart';
 
 import '../constants.dart';
 
-typedef void PaymentCallBack(OrderPaymentTypeModel val, String receiver, String customer);
+typedef void PaymentCallBack(OrderPaymentTypeModel val, String customer);
 
 class CustomPopup extends StatefulWidget {
 
-  CustomPopup({this.callback, this.receiver, this.customer, key}): super(key: key);
+  CustomPopup({this.callback, this.customer, key}): super(key: key);
 
   final PaymentCallBack callback;
-
-  final String receiver;
 
   final String customer;
 
@@ -27,8 +25,8 @@ class CustomPopup extends StatefulWidget {
 class _CustomPopupState extends State<CustomPopup> {
 
   List<OrderPaymentTypeModel> paymentTypes = [
-    OrderPaymentTypeModel("Thanh toán khác", 'OTHER'),
     OrderPaymentTypeModel("Khách nợ", 'DEBT'),
+    OrderPaymentTypeModel("Thanh toán khác", 'OTHER'),
     OrderPaymentTypeModel("Thanh toán thẻ", 'CREDIT_CARD'),
     OrderPaymentTypeModel("Miễn phí", 'FREE'),
   ];
@@ -36,8 +34,6 @@ class _CustomPopupState extends State<CustomPopup> {
   bool checkedValue = false;
 
   OrderPaymentTypeModel dropdownPaymentTypeValue;
-
-  TextEditingController receiverController =  new TextEditingController();
 
   TextEditingController customerController =  new TextEditingController();
 
@@ -52,13 +48,11 @@ class _CustomPopupState extends State<CustomPopup> {
     // TODO: implement initState
     super.initState();
     dropdownPaymentTypeValue = paymentTypes.first;
-    receiverController.text = widget.receiver;
     customerController.text = widget.customer;
   }
 
   @override
   void dispose() {
-    receiverController.dispose();
     customerController.dispose();
     super.dispose();
   }
@@ -102,7 +96,8 @@ class _CustomPopupState extends State<CustomPopup> {
             onChanged: (OrderPaymentTypeModel newValue) async {
               setState(() {
                 dropdownPaymentTypeValue = newValue;
-                widget.callback(newValue, receiverController.text, customerController.text);
+                print("new value: ${newValue.name}");
+                widget.callback(newValue, customerController.text);
               });
             },
             items: paymentTypes
@@ -114,46 +109,20 @@ class _CustomPopupState extends State<CustomPopup> {
             }).toList(),
           ),
         ),
-        dropdownPaymentTypeValue != null && dropdownPaymentTypeValue.value == "DEBT" ? Container(
-          height: 50,
-          margin: EdgeInsets.only(left: 30, top: 10, bottom: 20),
-          child: Container(
-              height: 50,
-              width: size.width * 0.3,
-              child: Form(
-                child: Container(
-                  decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10.0),
-                      border: Border.all()
-                  ),
-                  child: TextFormField(
-                    obscureText: false,
-                    controller: receiverController,
-                    style: style,
-                    onChanged: (val) {
-                      widget.callback(dropdownPaymentTypeValue, val, customerController.text);
-                    },
-                    decoration: InputDecoration(
-                        hintText: "Điền người nhận",
-                        contentPadding: EdgeInsets.only(left: 10),
-                        fillColor: PrimaryBlackColor,
-                        hintStyle: TextStyle(
-                            fontSize: 16,
-                            color: PrimaryGreyColor
-                        ),
-                        border: InputBorder.none
-                    ),
-                  ),
-                ),
-              )
-          ),
-        ): Container(
-        ),
-        dropdownPaymentTypeValue != null && (dropdownPaymentTypeValue.value == "OTHER" || dropdownPaymentTypeValue.value == "CREDIT_CARD")
+        dropdownPaymentTypeValue != null && (dropdownPaymentTypeValue.value == "OTHER")
+            ? Container(
+          height: 70,
+          margin: EdgeInsets.only(top: 20, left: 30),
+          child: Text("(Nhấn thanh toán để sửa phiếu thanh toán)", style: TextStyle(
+            color: Colors.red,
+            fontSize: 18
+          )),
+        ): Container(),
+        dropdownPaymentTypeValue != null && (dropdownPaymentTypeValue.value == "CREDIT_CARD")
             ? Container(
           height: 70,
         ): Container(),
-        dropdownPaymentTypeValue != null && dropdownPaymentTypeValue.value == "FREE" ?  Container(
+        dropdownPaymentTypeValue != null && (dropdownPaymentTypeValue.value == "DEBT" || dropdownPaymentTypeValue.value == "FREE" ) ?  Container(
           width: size.width * 0.5,
           height: 50,
           margin: EdgeInsets.only(left: 30, top: 10, bottom: 20),
@@ -211,7 +180,7 @@ class _CustomPopupState extends State<CustomPopup> {
                           setState(() {
                             ex1 = selected;
                             customerController.text = selected.partnerCustomerName;
-                            widget.callback(dropdownPaymentTypeValue, receiverController.text, customerController.text);
+                            widget.callback(dropdownPaymentTypeValue, customerController.text);
                           });
                         }
                     );
@@ -230,7 +199,7 @@ class _CustomPopupState extends State<CustomPopup> {
                   onPressed: () {
                     setState(() {
                       customerController.text = "";
-                      widget.callback(dropdownPaymentTypeValue, receiverController.text, customerController.text);
+                      widget.callback(dropdownPaymentTypeValue, customerController.text);
                     });
                   },
                   child: Icon(
