@@ -52,6 +52,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   String customer = "";
 
+  String receiver = "";
+
   List<ProductRestaurantModel> listProductView = [];
 
   List<CategoryMealRestaurantModel> listCateBep = [];
@@ -1130,6 +1132,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                       setState(() {
                                         _commission.receiveName = receiveController.text;
                                         _commission.customerName = customerController.text;
+                                        customer =  customerController.text;
+                                        receiver = receiveController.text;
                                         int c = commissionController != null && commissionController.text != "" ? int.parse(commissionController.text) : 0;
                                         _commission.rosesPercent = c;
                                         _commission.rosesNote = noteCommissionController.text;
@@ -1288,161 +1292,167 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               backgroundColor: Colors.transparent,
               insetPadding: EdgeInsets.all(10.0),
               child: Container(
-                height: size.height * 0.45,
+                height: size.height * 0.52,
                 width: size.width * 0.5, decoration: BoxDecoration(
                   color: Colors.white
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Container(
-                        height: size.height * 0.1,
-                        width: size.width * 0.5,
-                        decoration: BoxDecoration(
-                            color: PrimaryGreenColor
+                child: SingleChildScrollView(
+                  child: Container(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Container(
+                            height: size.height * 0.1,
+                            width: size.width * 0.5,
+                            decoration: BoxDecoration(
+                                color: PrimaryGreenColor
+                            ),
+                            child: Padding(
+                              padding: EdgeInsets.only(top: 20, left: 20),
+                              child: Text("PHƯƠNG THỨC THANH TOÁN", style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24
+                              )),
+                            )
                         ),
-                        child: Padding(
-                          padding: EdgeInsets.only(top: 20, left: 20),
-                          child: Text("PHƯƠNG THỨC THANH TOÁN", style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24
-                          )),
-                        )
-                    ),
-                    Container(
-                      height: 30,
-                      child: Padding(
-                        padding: EdgeInsets.only(left: 40, top: 10),
-                        child: Text("Chọn phương thức thanh toán",
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: PrimaryGreenColor
+                        Container(
+                          height: 30,
+                          child: Padding(
+                            padding: EdgeInsets.only(left: 40, top: 10),
+                            child: Text("Chọn phương thức thanh toán",
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    color: PrimaryGreenColor
+                                )),
+                          ),
+                        ),
+                        CustomPopup(customer: _order.commissionRestaurantModel.customerName,
+                            receiver: _order.commissionRestaurantModel.receiveName,
+                            callback: (val, val2, val3) async {
+                              setState( () => {dropdownPaymentTypeValue = val, customer = val2, receiver = val3});
+                              if(dropdownPaymentTypeValue.value == "OTHER") {
+                                await _showOtherPayment();
+                              }
+                            }),
+                        Container(
+                          height: 60,
+                          width: 150,
+                          margin: EdgeInsets.only(left: 330, top: 10),
+                          decoration: BoxDecoration(
+                              color: PrimaryGreenColor,
+                              borderRadius: BorderRadius.circular(5.0)
+                          ),
+                          child: TextButton(
+                            onPressed: () async {
+                              if(dropdownPaymentTypeValue != null && dropdownPaymentTypeValue.value != "OTHER") {
+                                if (_items.length < 1) {
+                                  Navigator.pop(context);
+                                  _showToastError("Vui lòng chọn đồ để đặt." );
+                                  return;
+                                }
+                                if((dropdownPaymentTypeValue.value == "FREE" || dropdownPaymentTypeValue.value == "DEBT") && (customer == null || customer.isEmpty)) {
+                                  _showToastError("Vui lòng chọn khách hàng." );
+                                  return;
+                                }
+
+                                if(dropdownPaymentTypeValue.value == "FREE" || dropdownPaymentTypeValue.value == "DEBT") {
+                                  setState(() {
+                                    _order.commissionRestaurantModel.customerName = customer;
+                                    _order.commissionRestaurantModel.receiveName = receiver;
+                                  });
+                                }
+
+
+                                if(this._order.reservationId != null) {
+                                  //TODO: controls the order got bill
+                                  List<ProductOrderModel> list = [];
+                                  _items.forEach((element) {
+                                    ProductOrderModel pro = element.product;
+                                    if (element.product.status == "PRE-CANCELLED") {
+                                      pro.status = "CANCEL";
+                                    }
+                                    pro.quantity = element.number;
+                                    list.add(pro);
+                                  });
+                                  DateTime now = DateTime.now();
+                                  int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
+                                  _order.products = list;
+                                  _order.usedAt = timeOrder;
+                                  // groupPayment ? _order.groupPayment = 1 : _order.groupPayment = 0;
+                                  _order.paymentResult = dropdownPaymentTypeValue.value;
+                                  _order.status = "CHECKOUT";
+
+                                  // TODO: Order
+                                  setState(() {
+                                    _isLoading = true;
+                                  });
+                                  ResultModel res = await restaurantService.reOrderFood(_order.toJson(), _order.id);
+                                  if(res.status) {
+                                    _showToast();
+                                    //TODO: go to table screen
+                                    Navigator.push(context,
+                                        MaterialPageRoute(builder: (context) => TableScreen())
+                                    );
+
+                                  } else {
+                                    _showToastError("Đặt đồ không thành công." );
+                                  }
+                                  setState(() {
+                                    _isLoading = false;
+                                  });
+                                } else {
+                                  //TODO: controls the order didn't got bill
+                                  List<ProductOrderModel> list = [];
+                                  _items.forEach((element) {
+                                    ProductOrderModel pro = element.product;
+                                    if (element.product.status == "PRE-CANCELLED") {
+                                      pro.status = "CANCEL";
+                                    }
+                                    pro.quantity = element.number;
+                                    list.add(pro);
+                                  });
+
+                                  DateTime now = DateTime.now();
+                                  int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
+                                  _order.usedAt = timeOrder;
+                                  _order.status = "CHECKOUT";
+                                  _order.paymentResult = dropdownPaymentTypeValue.value;
+                                  _order.products = list;
+                                  _order.tableInfo = widget.table;
+
+                                  // TODO: Order
+                                  setState(() {
+                                    _isLoading = true;
+                                  });
+                                  ResultModel res = await restaurantService.orderFood(_order.toJson());
+                                  if(res.status) {
+                                    _showToast();
+                                    //TODO: go to table screen
+                                    Navigator.push(context,
+                                        MaterialPageRoute(builder: (context) => TableScreen())
+                                    );
+                                  } else {
+                                    _showToastError("Đặt đồ không thành công." );
+                                  }
+                                }
+                              } else {
+                                if (_items.length < 1) {
+                                  Navigator.pop(context);
+                                  _showToastError("Vui lòng chọn đồ để đặt." );
+                                  return;
+                                }
+                                await _showOtherPayment();
+                              }
+                            },
+                            child: Text('THANH TOÁN', style: TextStyle(
+                                color: Colors.white
                             )),
-                      ),
+                          ),
+                        ),
+                      ],
                     ),
-                    CustomPopup(customer: _order.commissionRestaurantModel.customerName ,
-                        callback: (val, val2) async {
-                          setState( () => {dropdownPaymentTypeValue = val, customer = val2});
-                          if(dropdownPaymentTypeValue.value == "OTHER") {
-                            await _showOtherPayment();
-                          }
-                        }),
-                    Container(
-                      height: 60,
-                      width: 150,
-                      margin: EdgeInsets.only(left: 330, top: 10),
-                      decoration: BoxDecoration(
-                        color: PrimaryGreenColor,
-                        borderRadius: BorderRadius.circular(5.0)
-                      ),
-                      child: TextButton(
-                        onPressed: () async {
-                          if(dropdownPaymentTypeValue != null && dropdownPaymentTypeValue.value != "OTHER") {
-                            if (_items.length < 1) {
-                              Navigator.pop(context);
-                              _showToastError("Vui lòng chọn đồ để đặt." );
-                              return;
-                            }
-                            if((dropdownPaymentTypeValue.value == "FREE" || dropdownPaymentTypeValue.value == "DEBT") && (customer == null || customer.isEmpty)) {
-                              _showToastError("Vui lòng chọn khách hàng." );
-                              return;
-                            }
-
-                            if(dropdownPaymentTypeValue.value == "FREE" || dropdownPaymentTypeValue.value == "DEBT") {
-                              setState(() {
-                                _order.commissionRestaurantModel.customerName = customer;
-                              });
-                            }
-
-
-                            if(this._order.reservationId != null) {
-                              //TODO: controls the order got bill
-                              List<ProductOrderModel> list = [];
-                              _items.forEach((element) {
-                                ProductOrderModel pro = element.product;
-                                if (element.product.status == "PRE-CANCELLED") {
-                                  pro.status = "CANCEL";
-                                }
-                                pro.quantity = element.number;
-                                list.add(pro);
-                              });
-                              DateTime now = DateTime.now();
-                              int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
-                              _order.products = list;
-                              _order.usedAt = timeOrder;
-                              // groupPayment ? _order.groupPayment = 1 : _order.groupPayment = 0;
-                              _order.paymentResult = dropdownPaymentTypeValue.value;
-                              _order.status = "CHECKOUT";
-
-                              // TODO: Order
-                              setState(() {
-                                _isLoading = true;
-                              });
-                              ResultModel res = await restaurantService.reOrderFood(_order.toJson(), _order.id);
-                              if(res.status) {
-                                _showToast();
-                                //TODO: go to table screen
-                                Navigator.push(context,
-                                    MaterialPageRoute(builder: (context) => TableScreen())
-                                );
-
-                              } else {
-                                _showToastError("Đặt đồ không thành công." );
-                              }
-                              setState(() {
-                                _isLoading = false;
-                              });
-                            } else {
-                              //TODO: controls the order didn't got bill
-                              List<ProductOrderModel> list = [];
-                              _items.forEach((element) {
-                                ProductOrderModel pro = element.product;
-                                if (element.product.status == "PRE-CANCELLED") {
-                                  pro.status = "CANCEL";
-                                }
-                                pro.quantity = element.number;
-                                list.add(pro);
-                              });
-
-                              DateTime now = DateTime.now();
-                              int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
-                              _order.usedAt = timeOrder;
-                              _order.status = "CHECKOUT";
-                              _order.paymentResult = dropdownPaymentTypeValue.value;
-                              _order.products = list;
-                              _order.tableInfo = widget.table;
-
-                              // TODO: Order
-                              setState(() {
-                                _isLoading = true;
-                              });
-                              ResultModel res = await restaurantService.orderFood(_order.toJson());
-                              if(res.status) {
-                                _showToast();
-                                //TODO: go to table screen
-                                Navigator.push(context,
-                                    MaterialPageRoute(builder: (context) => TableScreen())
-                                );
-                              } else {
-                                _showToastError("Đặt đồ không thành công." );
-                              }
-                            }
-                          } else {
-                            if (_items.length < 1) {
-                              Navigator.pop(context);
-                              _showToastError("Vui lòng chọn đồ để đặt." );
-                              return;
-                            }
-                            await _showOtherPayment();
-                          }
-                        },
-                        child: Text('THANH TOÁN', style: TextStyle(
-                          color: Colors.white
-                        )),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               )
           );

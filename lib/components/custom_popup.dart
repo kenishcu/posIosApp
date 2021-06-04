@@ -8,15 +8,17 @@ import 'package:select_dialog/select_dialog.dart';
 
 import '../constants.dart';
 
-typedef void PaymentCallBack(OrderPaymentTypeModel val, String customer);
+typedef void PaymentCallBack(OrderPaymentTypeModel val, String customer, String receiver);
 
 class CustomPopup extends StatefulWidget {
 
-  CustomPopup({this.callback, this.customer, key}): super(key: key);
+  CustomPopup({this.callback, this.customer, this.receiver, key}): super(key: key);
 
   final PaymentCallBack callback;
 
   final String customer;
+
+  final String receiver;
 
   @override
   _CustomPopupState createState() => _CustomPopupState();
@@ -37,6 +39,8 @@ class _CustomPopupState extends State<CustomPopup> {
 
   TextEditingController customerController =  new TextEditingController();
 
+  TextEditingController receiverController =  new TextEditingController();
+
   TextStyle style = TextStyle(fontFamily: 'Montserrat', fontSize: 18.0, color: Colors.black87);
 
   PartnerCustomer ex1;
@@ -49,11 +53,13 @@ class _CustomPopupState extends State<CustomPopup> {
     super.initState();
     dropdownPaymentTypeValue = paymentTypes.first;
     customerController.text = widget.customer;
+    receiverController.text = widget.receiver;
   }
 
   @override
   void dispose() {
     customerController.dispose();
+    receiverController.dispose();
     super.dispose();
   }
 
@@ -97,7 +103,7 @@ class _CustomPopupState extends State<CustomPopup> {
               setState(() {
                 dropdownPaymentTypeValue = newValue;
                 print("new value: ${newValue.name}");
-                widget.callback(newValue, customerController.text);
+                widget.callback(newValue, customerController.text, receiverController.text);
               });
             },
             items: paymentTypes
@@ -124,89 +130,132 @@ class _CustomPopupState extends State<CustomPopup> {
         ): Container(),
         dropdownPaymentTypeValue != null && (dropdownPaymentTypeValue.value == "DEBT" || dropdownPaymentTypeValue.value == "FREE" ) ?  Container(
           width: size.width * 0.5,
-          height: 50,
+          height: 110,
           margin: EdgeInsets.only(left: 30, top: 10, bottom: 20),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.start,
+          child: Column(
             children: [
               Container(
-                height: 50,
-                width: size.width * 0.25,
-                decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10.0),
-                    border: Border.all()
-                ),
-                child: TextFormField(
-                  obscureText: false,
-                  controller: customerController,
-                  style: TextStyle(fontFamily: 'Montserrat', fontSize: 14.0, color: Colors.black87),
-                  decoration: InputDecoration(
-                      hintText: "",
-                      enabled: false,
-                      contentPadding: EdgeInsets.only(left: 10),
-                      fillColor: PrimaryBlackColor,
-                      hintStyle: TextStyle(
-                          fontSize: 12,
-                          color: PrimaryGreyColor
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 50,
+                      width: size.width * 0.25,
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10.0),
+                          border: Border.all()
                       ),
-                      border: InputBorder.none
-                  ),
-                ),
-              ),
-              Container(
-                height: 50,
-                width: size.width * 0.15,
-                margin: EdgeInsets.only(left: 10),
-                child: ElevatedButton(
-                  child: Text("Chọn khách hàng"),
-                  onPressed: () async {
-                    await SelectDialog.showModal<PartnerCustomer>(
-                        context,
-                        label: "Cập nhật khách hàng hoa hồng",
-                        titleStyle: TextStyle(color: Colors.brown),
-                        selectedValue: ex1,
-                        onFind: (String value) => getPartnerCustomer(value),
-                        backgroundColor: Colors.white,
-                        itemBuilder: (BuildContext context, PartnerCustomer partner, bool isSelected) {
-                          return Container(
-                            height: 50,
-                            child: Center(
-                              child: Text(partner.partnerCustomerName),
+                      child: TextFormField(
+                        obscureText: false,
+                        controller: customerController,
+                        style: TextStyle(fontFamily: 'Montserrat', fontSize: 14.0, color: Colors.black87),
+                        decoration: InputDecoration(
+                            hintText: "Vui lòng chọn khách hàng",
+                            enabled: false,
+                            contentPadding: EdgeInsets.only(left: 10),
+                            fillColor: PrimaryBlackColor,
+                            hintStyle: TextStyle(
+                                fontSize: 12,
+                                color: PrimaryGreyColor
                             ),
+                            border: InputBorder.none
+                        ),
+                      ),
+                    ),
+                    Container(
+                      height: 50,
+                      width: size.width * 0.15,
+                      margin: EdgeInsets.only(left: 10),
+                      child: ElevatedButton(
+                        child: Text("Chọn khách hàng"),
+                        onPressed: () async {
+                          await SelectDialog.showModal<PartnerCustomer>(
+                              context,
+                              label: "Cập nhật khách hàng hoa hồng",
+                              titleStyle: TextStyle(color: Colors.brown),
+                              selectedValue: ex1,
+                              onFind: (String value) => getPartnerCustomer(value),
+                              backgroundColor: Colors.white,
+                              itemBuilder: (BuildContext context, PartnerCustomer partner, bool isSelected) {
+                                return Container(
+                                  height: 50,
+                                  child: Center(
+                                    child: Text(partner.partnerCustomerName),
+                                  ),
+                                );
+                              },
+                              onChange: (PartnerCustomer selected) {
+                                setState(() {
+                                  ex1 = selected;
+                                  customerController.text = selected.partnerCustomerName;
+                                  widget.callback(dropdownPaymentTypeValue, customerController.text, receiverController.text);
+                                });
+                              }
                           );
                         },
-                        onChange: (PartnerCustomer selected) {
+                      ),
+                    ),
+                    Container(
+                      height: 50,
+                      width: 50,
+                      margin: EdgeInsets.only(left: 5),
+                      decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(5.0)
+                      ),
+                      child: TextButton(
+                        onPressed: () {
                           setState(() {
-                            ex1 = selected;
-                            customerController.text = selected.partnerCustomerName;
-                            widget.callback(dropdownPaymentTypeValue, customerController.text);
+                            customerController.text = "";
+                            widget.callback(dropdownPaymentTypeValue, customerController.text, receiverController.text);
                           });
-                        }
-                    );
-                  },
+                        },
+                        child: Icon(
+                          Icons.close,
+                          color: Colors.white,
+                        ),
+                      ),
+                    )
+                  ],
                 ),
               ),
               Container(
-                height: 50,
-                width: 50,
-                margin: EdgeInsets.only(left: 5),
-                decoration: BoxDecoration(
-                    color: Colors.red,
-                    borderRadius: BorderRadius.circular(5.0)
-                ),
-                child: TextButton(
-                  onPressed: () {
-                    setState(() {
-                      customerController.text = "";
-                      widget.callback(dropdownPaymentTypeValue, customerController.text);
-                    });
-                  },
-                  child: Icon(
-                    Icons.close,
-                    color: Colors.white,
-                  ),
-                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 50,
+                      width: size.width * 0.25,
+                      margin: EdgeInsets.only(top: 10),
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10.0),
+                          border: Border.all()
+                      ),
+                      child: TextFormField(
+                        obscureText: false,
+                        controller: receiverController,
+                        onChanged: (value) {
+                          setState(() {
+                            widget.callback(dropdownPaymentTypeValue, customerController.text, receiverController.text);
+                          });
+                        },
+                        style: TextStyle(fontFamily: 'Montserrat', fontSize: 14.0, color: Colors.black87),
+                        decoration: InputDecoration(
+                            hintText: "Vui lòng điền người nhận",
+                            contentPadding: EdgeInsets.only(left: 10),
+                            fillColor: PrimaryBlackColor,
+                            hintStyle: TextStyle(
+                                fontSize: 12,
+                                color: PrimaryGreyColor
+                            ),
+                            border: InputBorder.none
+                        ),
+                      ),
+                    ),
+                  ],
+                )
               )
             ],
           ),
