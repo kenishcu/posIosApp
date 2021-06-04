@@ -220,7 +220,7 @@ class _CustomPopupState extends State<CustomPopup> {
                   ],
                 ),
               ),
-              Container(
+              dropdownPaymentTypeValue != null && dropdownPaymentTypeValue.value == "DEBT" ? Container(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.start,
@@ -256,7 +256,7 @@ class _CustomPopupState extends State<CustomPopup> {
                     ),
                   ],
                 )
-              )
+              ): Container()
             ],
           ),
         ) : Container()
