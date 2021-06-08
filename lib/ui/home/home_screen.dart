@@ -336,6 +336,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     String tableId = widget.table.id;
 
+    print('position info : ${widget.table.position.positionName}');
+
     ResultModel res = await restaurantService.getOrderByTable(tableId);
 
     if(res.status) {
@@ -358,6 +360,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       });
     } else {
       UserModel user = Provider.of<SettingProvider>(context, listen: false).userInfo;
+
       DateTime now = DateTime.now();
       int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
       setState(() {
@@ -1392,7 +1395,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                     _showToast();
                                     //TODO: go to table screen
                                     Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => TableScreen())
+                                        MaterialPageRoute(builder: (context) => TableScreen(position: widget.table.position))
                                     );
 
                                   } else {
@@ -1430,7 +1433,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                     _showToast();
                                     //TODO: go to table screen
                                     Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => TableScreen())
+                                        MaterialPageRoute(builder: (context) => TableScreen(position: widget.table.position))
                                     );
                                   } else {
                                     _showToastError("Đặt đồ không thành công." );
@@ -2076,7 +2079,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                             _showToast();
                                             //TODO: go to table screen
                                             Navigator.push(context,
-                                                MaterialPageRoute(builder: (context) => TableScreen())
+                                                MaterialPageRoute(builder: (context) => TableScreen(position: widget.table.position))
                                             );
 
                                           } else {
@@ -2131,7 +2134,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                             _showToast();
                                             //TODO: go to table screen
                                             Navigator.push(context,
-                                                MaterialPageRoute(builder: (context) => TableScreen())
+                                                MaterialPageRoute(builder: (context) => TableScreen(position: widget.table.position))
                                             );
                                           } else {
                                             _showToastError("Đặt đồ không thành công." );
@@ -2486,14 +2489,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       Container(
-                          width: size.width * 0.3,
+                          width: size.width * 0.35,
                           height: 30,
                           child: Row(
                             children: [
                               Container(
                                   height: 30,
                                   padding: EdgeInsets.only(left: 4),
-                                  width: size.width * 0.17 - 2,
+                                  width: size.width * 0.2 - 2,
                                   child: Align(
                                     alignment: Alignment.centerLeft,
                                     child: Text(item != null && item.product != null ? item.product.productName : '' ,
@@ -2509,9 +2512,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   ),
                                   child: Align(
                                     alignment: Alignment.centerLeft,
-                                    child: Text(' Đã giảm: ${item.product.discount != null && item.product.discount != 0 ?
+                                    child: Text(' Đã giảm: ' + Money.fromInt((item.product.discount != null && item.product.discount != 0 ?
                                     item.product.discount * item.number : item.product.discountRate != null && item.product.discountRate != 0 ?
-                                    (item.product.discountRate * item.product.price * item.number / 100).round() : 0}',
+                                    (item.product.discountRate * item.product.price * item.number / 100).round() : 0), vnd).format('###,###').toString(),
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
                                             fontSize: 14,
@@ -2523,22 +2526,42 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       ),
                       Container(
                         height: 40,
-                        width: size.width * 0.3,
+                        width: size.width * 0.35,
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Container(
-                                height: 40,
-                                width: size.width * 0.15,
-                                padding: EdgeInsets.only(left: 4),
-                                child: Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Text( Money.fromInt((item.product.price * item.number), vnd).format('###,### CCC').toString() , style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold
-                                  )),
-                                )
+                              child: Column(
+                                children: [
+                                  Container(
+                                    height: 20,
+                                    width: size.width * 0.18,
+                                    padding: EdgeInsets.only(left: 4),
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text( item.product.note.isEmpty || item.product.note == null ? "" : "(${item.product.note})" ,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                          fontSize: 13,
+                                          fontStyle: FontStyle.italic,
+                                      )),
+                                    ),
+                                  ),
+                                  Container(
+                                      height: 20,
+                                      width: size.width * 0.18,
+                                      padding: EdgeInsets.only(left: 4),
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text( Money.fromInt((item.product.price * item.number), vnd).format('###,### CCC').toString() , style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold
+                                        )),
+                                      )
+                                  ),
+                                ],
+                              ),
                             ),
                             Container(
                               padding: EdgeInsets.only(),
@@ -2664,14 +2687,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         Container(
-                            width: size.width * 0.3,
+                            width: size.width * 0.35,
                             height: 30,
                             child: Row(
                               children: [
                                 Container(
                                     height: 30,
                                     padding: EdgeInsets.only(left: 4),
-                                    width: size.width * 0.17 - 2,
+                                    width: size.width * 0.2 - 2,
                                     child: Align(
                                       alignment: Alignment.centerLeft,
                                       child: Text(item != null && item.product != null ? item.product.productName : '' ,
@@ -2699,46 +2722,122 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         ),
                         Container(
                           height: 40,
-                          width: size.width * 0.3,
+                          width: size.width * 0.35,
                           child: Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Container(
-                                  height: 40,
-                                  width: size.width * 0.15,
-                                  padding: EdgeInsets.only(left: 4),
-                                  child: Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Text( Money.fromInt((item.product.price * item.number), vnd).format('###,### CCC').toString() , style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold
-                                    )),
-                                  )
+                                child: Column(
+                                  children: [
+                                    Container(
+                                      height: 20,
+                                      width: size.width * 0.18,
+                                      padding: EdgeInsets.only(left: 4),
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text( item.product.note.isEmpty || item.product.note == null ? "" : "(${item.product.note})" ,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontStyle: FontStyle.italic,
+                                            )),
+                                      ),
+                                    ),
+                                    Container(
+                                        height: 20,
+                                        width: size.width * 0.18,
+                                        padding: EdgeInsets.only(left: 4),
+                                        child: Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: Text( Money.fromInt((item.product.price * item.number), vnd).format('###,### CCC').toString() , style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold
+                                          )),
+                                        )
+                                    ),
+                                  ],
+                                ),
                               ),
                               Container(
                                 padding: EdgeInsets.only(),
                                 height: 40,
                                 width: 40,
                                 decoration: BoxDecoration(
+                                    border: Border.all(
+                                        color: PrimaryGreenColor
+                                    )
+                                ),
+                                child: TextButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      if(_items[index].number > 1) {
+                                        _items[index].number = _items[index].number -1;
+                                        _items = []..addAll(_items);
+                                      } else {
+                                        if (_items.length == 1) {
+                                          listKey.currentState.removeItem(
+                                              0, (BuildContext context,
+                                              Animation<double> animation) {
+                                            return Container();
+                                          });
+                                          _items.removeAt(0);
+                                          return;
+                                        } else {
+                                          listKey.currentState.removeItem(
+                                              index,
+                                                  (_, animation) =>
+                                                  _buildItem(context, 0, animation),
+                                              duration: const Duration(milliseconds: 200)
+                                          );
+                                          _items.removeAt(index);
+                                        }
+                                      }
+                                    });
+                                  },
+                                  child:  Icon(
+                                    Icons.remove,
+                                    size: 20,
+                                    color: PrimaryGreenColor,
+                                  ),
                                 ),
                               ),
                               Container(
                                 height: 40,
                                 width: 50,
                                 decoration: BoxDecoration(
-                                  // color: PrimaryGreenColor,
+                                  color: PrimaryGreenColor,
                                 ),
                                 child: Center(
-                                  child: Text('SL: ${item.number}' , style: TextStyle(
-                                    fontSize: 17,)),
+                                  child: Text(item != null && item.number != null ? item.number.toString(): '' , style: TextStyle(
+                                    fontSize: 17,
+                                    color: Colors.white,
+                                  )),
                                 ),
                               ),
                               Container(
-                                height: 40,
-                                width: 40,
-                                decoration: BoxDecoration(
-                                ),
+                                  height: 40,
+                                  width: 40,
+                                  decoration: BoxDecoration(
+                                      border: Border.all(
+                                          color: PrimaryGreenColor
+                                      )
+                                  ),
+                                  child: Container(
+                                    child: TextButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          _items[index].number = _items[index].number + 1;
+                                          _items = []..addAll(_items);
+                                        });
+                                      },
+                                      child: Icon(
+                                        Icons.add,
+                                        size: 20,
+                                        color: PrimaryGreenColor,
+                                      ),
+                                    ),
+                                  )
                               ),
                             ],
                           ),
@@ -2761,14 +2860,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     Container(
-                        width: size.width * 0.3,
+                        width: size.width * 0.35,
                         height: 30,
                         child: Row(
                           children: [
                             Container(
                                 height: 30,
                                 padding: EdgeInsets.only(left: 4),
-                                width: size.width * 0.17 - 2,
+                                width: size.width * 0.2 - 2,
                                 child: Align(
                                   alignment: Alignment.centerLeft,
                                   child: Text(item != null && item.product != null ? item.product.productName : '' ,
@@ -2784,10 +2883,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 ),
                                 child: Align(
                                   alignment: Alignment.centerLeft,
-                                  child: Text(' Đã giảm: ${item.product.discountRate * item.number}',
+                                  child: Text(' Đã giảm: ' + Money.fromInt((item.product.discount != null && item.product.discount != 0 ?
+                                  item.product.discount * item.number : item.product.discountRate != null && item.product.discountRate != 0 ?
+                                  (item.product.discountRate * item.product.price * item.number / 100).round() : 0), vnd).format('###,###').toString(),
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
-                                          fontSize: 14,
+                                        fontSize: 14,
                                       )),
                                 )
                             )
@@ -2796,22 +2897,42 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     ),
                     Container(
                       height: 40,
-                      width: size.width * 0.3,
+                      width: size.width * 0.35,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.start,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Container(
-                              height: 40,
-                              width: size.width * 0.15,
-                              padding: EdgeInsets.only(left: 4),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text( Money.fromInt((item.product.price * item.number), vnd).format('###,### CCC').toString() , style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold
-                                )),
-                              )
+                            child: Column(
+                              children: [
+                                Container(
+                                  height: 20,
+                                  width: size.width * 0.18,
+                                  padding: EdgeInsets.only(left: 4),
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text( item.product.note.isEmpty || item.product.note == null ? "" : "(${item.product.note})" ,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontStyle: FontStyle.italic,
+                                        )),
+                                  ),
+                                ),
+                                Container(
+                                    height: 20,
+                                    width: size.width * 0.18,
+                                    padding: EdgeInsets.only(left: 4),
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text( Money.fromInt((item.product.price * item.number), vnd).format('###,### CCC').toString() , style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold
+                                      )),
+                                    )
+                                ),
+                              ],
+                            ),
                           ),
                           Container(
                             padding: EdgeInsets.only(),
@@ -2866,11 +2987,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ),
                 ],
                 child: Container(
-                  width: size.width * 0.3,
+                  width: size.width * 0.35,
                   decoration: BoxDecoration(
                   ),
                   child:  Container(
-                    width: size.width * 0.3,
+                    width: size.width * 0.35,
                     decoration: BoxDecoration(
                       color: Colors.redAccent,
                     ),
@@ -2879,14 +3000,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         Container(
-                            width: size.width * 0.3,
+                            width: size.width * 0.35,
                             height: 30,
                             child: Row(
                               children: [
                                 Container(
                                     height: 30,
                                     padding: EdgeInsets.only(left: 4),
-                                    width: size.width * 0.17 - 2,
+                                    width: size.width * 0.2 - 2,
                                     child: Align(
                                       alignment: Alignment.centerLeft,
                                       child: Text(item != null && item.product != null ? item.product.productName : '' ,
@@ -2902,10 +3023,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                     ),
                                     child: Align(
                                       alignment: Alignment.centerLeft,
-                                      child: Text(' Đã giảm: ${item.product.discountRate * item.number}',
+                                      child: Text(' Đã giảm: ' + Money.fromInt((item.product.discount != null && item.product.discount != 0 ?
+                                      item.product.discount * item.number : item.product.discountRate != null && item.product.discountRate != 0 ?
+                                      (item.product.discountRate * item.product.price * item.number / 100).round() : 0), vnd).format('###,###').toString(),
                                           overflow: TextOverflow.ellipsis,
                                           style: TextStyle(
-                                              fontSize: 14,
+                                            fontSize: 14,
                                           )),
                                     )
                                 )
@@ -2914,22 +3037,42 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         ),
                         Container(
                           height: 40,
-                          width: size.width * 0.3,
+                          width: size.width * 0.35,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Container(
-                                  height: 40,
-                                  width: size.width * 0.15,
-                                  padding: EdgeInsets.only(left: 4),
-                                  child: Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Text( Money.fromInt((item.product.price * item.number), vnd).format('###,### CCC').toString() , style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold
-                                    )),
-                                  )
+                                child: Column(
+                                  children: [
+                                    Container(
+                                      height: 20,
+                                      width: size.width * 0.18,
+                                      padding: EdgeInsets.only(left: 4),
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text( item.product.note.isEmpty || item.product.note == null ? "" : "(${item.product.note})" ,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontStyle: FontStyle.italic,
+                                            )),
+                                      ),
+                                    ),
+                                    Container(
+                                        height: 20,
+                                        width: size.width * 0.18,
+                                        padding: EdgeInsets.only(left: 4),
+                                        child: Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: Text( Money.fromInt((item.product.price * item.number), vnd).format('###,### CCC').toString() , style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold
+                                          )),
+                                        )
+                                    ),
+                                  ],
+                                ),
                               ),
                               Container(
                                 padding: EdgeInsets.only(),
@@ -3194,7 +3337,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   onPressed: () {
                     //TODO: go to table screen
                     Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => TableScreen())
+                        MaterialPageRoute(builder: (context) => TableScreen(position: widget.table.position))
                     );
                   },
                   child: Container(
@@ -3669,7 +3812,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                       _showToast();
                                       //TODO: go to table screen
                                       Navigator.push(context,
-                                          MaterialPageRoute(builder: (context) => TableScreen())
+                                          MaterialPageRoute(builder: (context) => TableScreen(position: widget.table.position))
                                       );
 
                                     } else {
@@ -3706,7 +3849,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                       _showToast();
                                       //TODO: go to table screen
                                       Navigator.push(context,
-                                          MaterialPageRoute(builder: (context) => TableScreen())
+                                          MaterialPageRoute(builder: (context) => TableScreen(position: widget.table.position))
                                       );
                                     } else {
                                       _showToastError("Đặt đồ không thành công." );

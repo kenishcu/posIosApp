@@ -18,6 +18,10 @@ import '../../constants.dart';
 
 class TableScreen extends StatefulWidget {
 
+  final PositionTableModel position;
+
+  TableScreen({Key key,@required this.position}) : super(key: key);
+
   @override
   _TableScreenState createState() => _TableScreenState();
 }
@@ -87,7 +91,11 @@ class _TableScreenState extends State<TableScreen> {
     }
     setState(() {
       if(positions != null && positions.length > 0) {
-        dropdownValue = positions.first;
+        if(widget.position == null) {
+          dropdownValue = positions.first;
+        } else {
+          dropdownValue = positions.where((element) => element.positionName == widget.position.positionName).first;
+        }
       }
     });
 
