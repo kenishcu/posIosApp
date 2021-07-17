@@ -360,7 +360,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       UserModel user = Provider.of<SettingProvider>(context, listen: false).userInfo;
 
       DateTime now = DateTime.now();
-      int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
+      int timeOrder = timeToTimeStamp(now);
       setState(() {
         PaymentOtherModel  paymentOther = new PaymentOtherModel(
           0,0,0,0,0,0,0,0
@@ -2048,7 +2048,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                             list.add(pro);
                                           });
                                           DateTime now = DateTime.now();
-                                          int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
+                                          int timeOrder = timeToTimeStamp(now);
                                           _order.products = list;
                                           _order.usedAt = timeOrder;
                                           _order.groupPayment = 0;
@@ -2070,23 +2070,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                             return;
                                           }
                                           // TODO: Order
-                                          // setState(() {
-                                          //   _isLoading = true;
-                                          // });
-                                          // ResultModel res = await restaurantService.reOrderFood(_order.toJson(), _order.id);
-                                          // if(res.status) {
-                                          //   _showToast();
-                                          //   //TODO: go to table screen
-                                          //   Navigator.push(context,
-                                          //       MaterialPageRoute(builder: (context) => TableScreen(position: widget.table.position))
-                                          //   );
-                                          //
-                                          // } else {
-                                          //   _showToastError("Thanh toán không thành công (Lỗi thanh toán)!");
-                                          // }
-                                          // setState(() {
-                                          //   _isLoading = false;
-                                          // });
+                                          setState(() {
+                                            _isLoading = true;
+                                          });
+                                          ResultModel res = await restaurantService.reOrderFood(_order.toJson(), _order.id);
+                                          if(res.status) {
+                                            _showToast();
+                                            //TODO: go to table screen
+                                            Navigator.push(context,
+                                                MaterialPageRoute(builder: (context) => TableScreen(position: widget.table.position))
+                                            );
+
+                                          } else {
+                                            _showToastError("Thanh toán không thành công (Lỗi thanh toán)!");
+                                          }
+                                          setState(() {
+                                            _isLoading = false;
+                                          });
                                         } else {
                                           //TODO: controls the order didn't got bill
                                           List<ProductOrderModel> list = [];
@@ -2100,7 +2100,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                           });
 
                                           DateTime now = DateTime.now();
-                                          int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
+                                          int timeOrder = timeToTimeStamp(now);
                                           _order.usedAt = timeOrder;
                                           _order.status = "CHECKOUT";
                                           _order.groupPayment = 0;
@@ -2125,19 +2125,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                           }
 
                                           // TODO: Order
-                                          // setState(() {
-                                          //   _isLoading = true;
-                                          // });
-                                          // ResultModel res = await restaurantService.orderFood(_order.toJson());
-                                          // if(res.status) {
-                                          //   _showToast();
-                                          //   //TODO: go to table screen
-                                          //   Navigator.push(context,
-                                          //       MaterialPageRoute(builder: (context) => TableScreen(position: widget.table.position))
-                                          //   );
-                                          // } else {
-                                          //   _showToastError("Đặt đồ không thành công." );
-                                          // }
+                                          setState(() {
+                                            _isLoading = true;
+                                          });
+                                          ResultModel res = await restaurantService.orderFood(_order.toJson());
+                                          if(res.status) {
+                                            _showToast();
+                                            //TODO: go to table screen
+                                            Navigator.push(context,
+                                                MaterialPageRoute(builder: (context) => TableScreen(position: widget.table.position))
+                                            );
+                                          } else {
+                                            _showToastError("Đặt đồ không thành công." );
+                                          }
                                         }
                                       },
                                       child: Text("Thanh toán", style: TextStyle(
@@ -3656,7 +3656,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                       } else {
                                         UserModel user = Provider.of<SettingProvider>(context, listen: false).userInfo;
                                         DateTime now = DateTime.now();
-                                        int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
+                                        int timeOrder = timeToTimeStamp(now);
                                         setState(() {
                                           PaymentOtherModel  paymentOther = new PaymentOtherModel(
                                               0,0,0,0,0,0,0,0
@@ -3736,7 +3736,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                       } else {
                                         UserModel user = Provider.of<SettingProvider>(context, listen: false).userInfo;
                                         DateTime now = DateTime.now();
-                                        int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
+                                        int timeOrder = timeToTimeStamp(now);
                                         setState(() {
                                           PaymentOtherModel  paymentOther = new PaymentOtherModel(
                                               0,0,0,0,0,0,0,0
