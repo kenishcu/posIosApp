@@ -15,6 +15,7 @@ class BranchService {
           data: {'n': '','p':'', 'query': ''},
           options: Options(method: 'GET')
       );
+      print(response.data);
       return ResultModel.fromJson(response.data);
     } on DioError catch (e) {
       print("error: ");

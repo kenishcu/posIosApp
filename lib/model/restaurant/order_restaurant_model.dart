@@ -72,7 +72,7 @@ class OrderRestaurantModel {
       'products': list,
       'reservation_id': _reservationId,
       'service_charge': _serviceCharge,
-      'service_change_rate': _serviceChargeRate,
+      'service_charge_rate': _serviceChargeRate,
       'status': _status,
       'table': _tableInfo.toJson(),
       'tax': _tax,

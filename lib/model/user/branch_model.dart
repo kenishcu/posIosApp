@@ -9,8 +9,10 @@ class BranchModel {
 
   factory BranchModel.fromJson(dynamic json) {
     return BranchModel(json['branch_id'] as String, json['branch_name'] as String,
-        json['branch_code'] as String, json['status'] as int);
+        json['branch_code'] as String,
+        json['status'] as int);
   }
+
 
   String get branchId => _branchId;
 

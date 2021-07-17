@@ -336,8 +336,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     String tableId = widget.table.id;
 
-    print('position info : ${widget.table.position.positionName}');
-
     ResultModel res = await restaurantService.getOrderByTable(tableId);
 
     if(res.status) {
@@ -1379,7 +1377,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                     list.add(pro);
                                   });
                                   DateTime now = DateTime.now();
-                                  int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
+                                  int timeOrder = timeToTimeStamp(now);
                                   _order.products = list;
                                   _order.usedAt = timeOrder;
                                   // groupPayment ? _order.groupPayment = 1 : _order.groupPayment = 0;
@@ -1417,7 +1415,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   });
 
                                   DateTime now = DateTime.now();
-                                  int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
+                                  int timeOrder = timeToTimeStamp(now);
+
                                   _order.usedAt = timeOrder;
                                   _order.status = "CHECKOUT";
                                   _order.paymentResult = dropdownPaymentTypeValue.value;
@@ -2071,23 +2070,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                             return;
                                           }
                                           // TODO: Order
-                                          setState(() {
-                                            _isLoading = true;
-                                          });
-                                          ResultModel res = await restaurantService.reOrderFood(_order.toJson(), _order.id);
-                                          if(res.status) {
-                                            _showToast();
-                                            //TODO: go to table screen
-                                            Navigator.push(context,
-                                                MaterialPageRoute(builder: (context) => TableScreen(position: widget.table.position))
-                                            );
-
-                                          } else {
-                                            _showToastError("Thanh toán không thành công (Lỗi thanh toán)!");
-                                          }
-                                          setState(() {
-                                            _isLoading = false;
-                                          });
+                                          // setState(() {
+                                          //   _isLoading = true;
+                                          // });
+                                          // ResultModel res = await restaurantService.reOrderFood(_order.toJson(), _order.id);
+                                          // if(res.status) {
+                                          //   _showToast();
+                                          //   //TODO: go to table screen
+                                          //   Navigator.push(context,
+                                          //       MaterialPageRoute(builder: (context) => TableScreen(position: widget.table.position))
+                                          //   );
+                                          //
+                                          // } else {
+                                          //   _showToastError("Thanh toán không thành công (Lỗi thanh toán)!");
+                                          // }
+                                          // setState(() {
+                                          //   _isLoading = false;
+                                          // });
                                         } else {
                                           //TODO: controls the order didn't got bill
                                           List<ProductOrderModel> list = [];
@@ -2126,19 +2125,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                           }
 
                                           // TODO: Order
-                                          setState(() {
-                                            _isLoading = true;
-                                          });
-                                          ResultModel res = await restaurantService.orderFood(_order.toJson());
-                                          if(res.status) {
-                                            _showToast();
-                                            //TODO: go to table screen
-                                            Navigator.push(context,
-                                                MaterialPageRoute(builder: (context) => TableScreen(position: widget.table.position))
-                                            );
-                                          } else {
-                                            _showToastError("Đặt đồ không thành công." );
-                                          }
+                                          // setState(() {
+                                          //   _isLoading = true;
+                                          // });
+                                          // ResultModel res = await restaurantService.orderFood(_order.toJson());
+                                          // if(res.status) {
+                                          //   _showToast();
+                                          //   //TODO: go to table screen
+                                          //   Navigator.push(context,
+                                          //       MaterialPageRoute(builder: (context) => TableScreen(position: widget.table.position))
+                                          //   );
+                                          // } else {
+                                          //   _showToastError("Đặt đồ không thành công." );
+                                          // }
                                         }
                                       },
                                       child: Text("Thanh toán", style: TextStyle(
@@ -2345,9 +2344,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                               ),
                                             ),
                                             Container(
-                                              height: 23,
+                                              height: 40,
                                               margin: EdgeInsets.only(top: 3, left: 10),
                                               child: Text(listProductView[index].productName,
+                                                  maxLines: 2,
                                                   overflow: TextOverflow.ellipsis,
                                                   style: TextStyle(
                                                       fontSize: 14,
@@ -3164,6 +3164,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     });
   }
 
+  int timeToTimeStamp(DateTime datetime) {
+    DateTime startDate = DateTime(datetime.year, datetime.month, datetime.day, 0, 0, 1);
+    var ms = startDate.millisecondsSinceEpoch;
+    int timeOrder = (ms /1000).round();
+    return timeOrder;
+  }
+
   _showToast() {
     Widget toast = Container(
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
@@ -3610,11 +3617,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                       list.add(pro);
                                     });
                                     DateTime now = DateTime.now();
-                                    int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
+                                    int timeOrder = timeToTimeStamp(now);
                                     _order.products = list;
                                     _order.usedAt = timeOrder;
 
-                                    // TODO: Order
+                                    //TODO: Order
                                     setState(() {
                                       _isLoading = true;
                                     });
@@ -3688,12 +3695,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                     });
 
                                     DateTime now = DateTime.now();
-                                    int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
+                                    int timeOrder = timeToTimeStamp(now);
                                     _order.usedAt = timeOrder;
                                     _order.products = list;
                                     _order.tableInfo = widget.table;
 
-                                    // TODO: Order
+                                    //TODO: Order
                                     setState(() {
                                       _isLoading = true;
                                     });
@@ -3782,6 +3789,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               ),
                               child: TextButton(
                                 onPressed: () async {
+
                                   if(_items.length == 0) {
                                     _showToastError("Vui lòng chọn món ăn ." );
                                     return;
@@ -3798,7 +3806,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                       list.add(pro);
                                     });
                                     DateTime now = DateTime.now();
-                                    int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
+                                    int timeOrder = timeToTimeStamp(now);
+
                                     _order.products = list;
                                     _order.usedAt = timeOrder;
                                     _order.status = "CHECKOUT";
@@ -3834,7 +3843,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                     });
 
                                     DateTime now = DateTime.now();
-                                    int timeOrder = (now.microsecondsSinceEpoch / 1000).round();
+                                    int timeOrder = timeToTimeStamp(now);
+
                                     _order.usedAt = timeOrder;
                                     _order.status = "CHECKOUT";
                                     _order.products = list;
@@ -3855,7 +3865,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                       _showToastError("Đặt đồ không thành công." );
                                     }
                                   }
-
                                 },
                                 child: Text("THANH TOÁN NHANH", style: TextStyle(
                                     color: Colors.white
