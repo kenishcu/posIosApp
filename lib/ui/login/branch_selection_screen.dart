@@ -165,31 +165,35 @@ class _BranchSelectionScreenState extends State<BranchSelectionScreen> {
                                 child: TextButton(
                                   onPressed: () async {
                                     //TODO: set config branch
-                                    BranchModel newBranch = BranchModel(branches[index].branchId, branches[index].branchName,  branches[index].branchCode,  branches[index].status);
-                                    UserModel userInfo = Provider.of<SettingProvider>(context, listen: false).userInfo;
-                                    userInfo.branch = newBranch;
-                                    userInfo.branchCode = newBranch.branchCode;
-                                    userInfo.branchName = newBranch.branchName;
-                                    userInfo.branchId = newBranch.branchId;
-                                    Provider.of<SettingProvider>(context, listen: false).setUserInfo(userInfo);
+                                    if(branches[index].status == 1){
+                                      BranchModel newBranch = BranchModel(branches[index].branchId, branches[index].branchName,  branches[index].branchCode,
+                                           branches[index].status);
+                                      UserModel userInfo = Provider.of<SettingProvider>(context, listen: false).userInfo;
+                                      userInfo.branch = newBranch;
+                                      userInfo.branchCode = newBranch.branchCode;
+                                      userInfo.branchName = newBranch.branchName;
+                                      userInfo.branchId = newBranch.branchId;
 
-                                    //TODO: up data sqflite
-                                    UserSqfLite userSqfLite = new UserSqfLite();
-                                    int c = await userSqfLite.queryRowCount();
+                                      Provider.of<SettingProvider>(context, listen: false).setUserInfo(userInfo);
 
-                                    if(c > 0) {
-                                      UserModelSqflite userModelSqflite = await userSqfLite.findById(1);
-                                      userModelSqflite.branchCode = newBranch.branchCode;
-                                      userModelSqflite.branchName = newBranch.branchName;
-                                      userModelSqflite.branchId = newBranch.branchId;
+                                      //TODO: up data sqflite
+                                      UserSqfLite userSqfLite = new UserSqfLite();
+                                      int c = await userSqfLite.queryRowCount();
 
-                                      await userSqfLite.update(userModelSqflite);
+                                      if(c > 0) {
+                                        UserModelSqflite userModelSqflite = await userSqfLite.findById(1);
+                                        userModelSqflite.branchCode = newBranch.branchCode;
+                                        userModelSqflite.branchName = newBranch.branchName;
+                                        userModelSqflite.branchId = newBranch.branchId;
+
+                                        await userSqfLite.update(userModelSqflite);
+                                      }
+
+                                      //TODO: go to table screen
+                                      Navigator.push(context,
+                                          MaterialPageRoute(builder: (context) => TableScreen())
+                                      );
                                     }
-
-                                    //TODO: go to table screen
-                                    Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) => TableScreen())
-                                    );
                                   },
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,

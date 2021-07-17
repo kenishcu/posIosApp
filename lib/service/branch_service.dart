@@ -15,6 +15,20 @@ class BranchService {
           data: {'n': '','p':'', 'query': ''},
           options: Options(method: 'GET')
       );
+      print(response.data);
+      return ResultModel.fromJson(response.data);
+    } on DioError catch (e) {
+      print("error: ");
+      throw (e.message);
+    }
+  }
+
+  Future<ResultModel> getBranchInformation(String branchId) async {
+    try {
+      Response response = await client.dio.request(
+          API_URL + '/branch/${branchId.toString()}',
+          options: Options(method: 'GET')
+      );
       return ResultModel.fromJson(response.data);
     } on DioError catch (e) {
       print("error: ");

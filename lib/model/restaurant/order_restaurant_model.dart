@@ -1,4 +1,5 @@
 import 'package:pos_ios_bvhn/model/restaurant/commission_restaurant_model.dart';
+import 'package:pos_ios_bvhn/model/restaurant/payment_other_model.dart';
 import 'package:pos_ios_bvhn/model/restaurant/product_order_model.dart';
 import 'package:pos_ios_bvhn/model/table/table_model.dart';
 
@@ -15,6 +16,7 @@ class OrderRestaurantModel {
   int _discount;
   int _discountRate;
   int _groupPayment;
+  String _orderType;
   String _paymentResult;
 
   List<ProductOrderModel> _products;
@@ -28,12 +30,13 @@ class OrderRestaurantModel {
   int _taxRate;
   TableModel _tableInfo;
   int _usedAt;
+  PaymentOtherModel _paymentOtherModel;
 
   OrderRestaurantModel(this._id, this._branchId, this._branchName, this._branchCode,
       this._commissionRestaurantModel, this._discount, this._discountRate,
-      this._groupPayment, this._paymentResult, this._products, this._reservationId,
-      this._serviceCharge, this._serviceChargeRate, this._status, this._tableInfo,
-      this._tax, this._taxRate, this._usedAt);
+      this._groupPayment, this._orderType, this._paymentResult, this._products,
+      this._reservationId, this._serviceCharge, this._serviceChargeRate, this._status, this._tableInfo,
+      this._tax, this._taxRate, this._usedAt, this._paymentOtherModel);
 
   factory OrderRestaurantModel.fromJson(dynamic json) {
     List<ProductOrderModel> products = [];
@@ -44,10 +47,10 @@ class OrderRestaurantModel {
     }
     return OrderRestaurantModel(json['_id'] as String, json['branch_id'] as String, json['branch_name'] as String,
     json['branch_code'] as String, CommissionRestaurantModel.fromJson(json['commission']), json['discount'] as int,
-    json['discount_rate'] as int, json['group_payment'] as int, json['payment_result'] as String,
+    json['discount_rate'] as int, json['group_payment'] as int, json['order_type'], json['payment_result'] as String,
     products, json['reservation_id'] as int, json['service_charge'] as int,
     json['service_charge_rate'] as int, json['status'] as String, TableModel.fromJson(json['table']),
-    json['tax'] as int, json['tax_rate'] as int, json['used_at'] as int);
+    json['tax'] as int, json['tax_rate'] as int, json['used_at'] as int, PaymentOtherModel.fromJson(json['payment_other']));
   }
 
   toJson() {
@@ -64,15 +67,18 @@ class OrderRestaurantModel {
       'discount': _discount,
       'discount_rate': _discountRate,
       'group_payment': _groupPayment,
+      'order_type': _orderType,
       'payment_result': _paymentResult,
       'products': list,
+      'reservation_id': _reservationId,
       'service_charge': _serviceCharge,
-      'service_change_rate': _serviceChargeRate,
+      'service_charge_rate': _serviceChargeRate,
       'status': _status,
       'table': _tableInfo.toJson(),
       'tax': _tax,
       'tax_rate': _taxRate,
-      'used_at': _usedAt
+      'used_at': _usedAt,
+      'payment_other': _paymentOtherModel.toJson()
     };
   }
 
@@ -80,6 +86,12 @@ class OrderRestaurantModel {
 
   set id(String value) {
     _id = value;
+  }
+
+  String get orderType => _orderType;
+
+  set orderType(String value) {
+    _orderType = value;
   }
 
   String get branchId => _branchId;
@@ -183,5 +195,10 @@ class OrderRestaurantModel {
 
   set usedAt(int value) {
     _usedAt = value;
+  }
+  PaymentOtherModel get paymentOtherModel => _paymentOtherModel;
+
+  set paymentOtherModel(PaymentOtherModel value) {
+    _paymentOtherModel = value;
   }
 }

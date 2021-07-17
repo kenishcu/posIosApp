@@ -191,8 +191,6 @@ class _LoginScreenState extends State<LoginScreen> {
           onPressed: () async {
             if (this._formKey.currentState.validate()) {
               // TODO: Auth
-              print( "Email : " + emailController.text);
-              print( "Password : " + passwordController.text);
                LoginFormModel loginFormModel = new LoginFormModel(emailController.text, passwordController.text);
                ResultModel res = await authService.login(loginFormModel.toJson());
                if(res.status) {
@@ -210,7 +208,7 @@ class _LoginScreenState extends State<LoginScreen> {
                    branchName: userInfo.branchName,
                    roleId: userInfo.roleId,
                    roleName: userInfo.roleName,
-                   roleCode: userInfo.roleCode,
+                   roleCode: userInfo.roleCode
                  );
 
                  UserSqfLite userSqfLite = new UserSqfLite();

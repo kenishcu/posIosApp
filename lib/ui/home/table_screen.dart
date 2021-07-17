@@ -18,6 +18,10 @@ import '../../constants.dart';
 
 class TableScreen extends StatefulWidget {
 
+  final PositionTableModel position;
+
+  TableScreen({Key key,@required this.position}) : super(key: key);
+
   @override
   _TableScreenState createState() => _TableScreenState();
 }
@@ -32,6 +36,8 @@ class _TableScreenState extends State<TableScreen> {
   List<TableModel> tables = [];
 
   PositionTableModel dropdownValue;
+
+  bool loading = false;
 
   @override
   void initState() {
@@ -52,6 +58,10 @@ class _TableScreenState extends State<TableScreen> {
     //TODO:
     UserSqfLite userSqfLite = new UserSqfLite();
     int c = await userSqfLite.queryRowCount();
+
+    setState(() {
+      loading = true;
+    });
 
     if(c > 0) {
       UserModelSqflite userModelSqflite = await userSqfLite.findById(1);
@@ -80,7 +90,13 @@ class _TableScreenState extends State<TableScreen> {
       }
     }
     setState(() {
-      dropdownValue = positions.first;
+      if(positions != null && positions.length > 0) {
+        if(widget.position == null) {
+          dropdownValue = positions.first;
+        } else {
+          dropdownValue = positions.where((element) => element.positionName == widget.position.positionName).first;
+        }
+      }
     });
 
     ResultModel resTableData = await tableService.getTableDataByPosition(branchId, dropdownValue.id);
@@ -91,6 +107,9 @@ class _TableScreenState extends State<TableScreen> {
         });
       }
     }
+    setState(() {
+      loading = false;
+    });
   }
 
   @override
@@ -256,11 +275,17 @@ class _TableScreenState extends State<TableScreen> {
                     )
                 ),
               ],
-            ) : Container(),
+            ) : Container(
+              child: Center(
+                child: Text("Không có dữ liệu. !", style: TextStyle(
+                  fontSize: 30,
+                  color: Colors.grey
+                ))
+              )
+            ),
           ),
         ],
       ),
     );
   }
-
 }

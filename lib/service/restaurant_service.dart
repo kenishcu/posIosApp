@@ -17,7 +17,8 @@ class RestaurantService {
       Response response = await client.dio.request(
           API_URL + '/product-in-menu?branch_id=${branchId.toString()}'
               '&category_id=${categoryId.toString()}'
-              '&category_parent_id=${parentId.toString()}&query=${query.toString()}',
+              '&category_parent_id=${parentId.toString()}&query=${query.toString()}'
+              '&p=${p.toString()}&n=${n.toString()}',
           options: Options(method: 'GET')
       );
       return ResultModel.fromJson(response.data);
@@ -59,7 +60,6 @@ class RestaurantService {
           data: data,
           options: Options(method: 'POST')
       );
-      print(response.data);
       return ResultModel.fromJson(response.data);
     } on DioError catch (e) {
       print("errors: ");
@@ -73,6 +73,7 @@ class RestaurantService {
           data: data,
           options: Options(method: 'PUT')
       );
+      print('data: ${data.toString()}');
       print(response.data);
       return ResultModel.fromJson(response.data);
     } on DioError catch (e) {
